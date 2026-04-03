@@ -17,7 +17,7 @@ where
     parse_duration_str(&s).map_err(serde::de::Error::custom)
 }
 
-fn parse_duration_str(s: &str) -> Result<Duration, String> {
+pub fn parse_duration_str(s: &str) -> Result<Duration, String> {
     if let Some(val) = s.strip_suffix("ms") {
         let n: u64 = val.parse().map_err(|e| format!("invalid duration: {}", e))?;
         Ok(Duration::from_millis(n))

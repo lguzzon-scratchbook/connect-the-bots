@@ -12,7 +12,7 @@
 //! ```
 
 pub mod ast;
-mod duration_serde;
+pub mod duration_serde;
 mod parser;
 
 pub use ast::*;
@@ -285,6 +285,36 @@ mod tests {
         let graph = parse(input).unwrap();
         assert_eq!(graph.nodes.len(), 3);
         assert_eq!(graph.edges.len(), 2);
+    }
+
+    #[test]
+    fn quoted_duration_parsed_as_string() {
+        // Quoted durations are parsed as String by the DOT parser (since quoted_string
+        // matches first in alt()). The pipeline's get_duration_attr handles this by
+        // falling back to parse_duration_str for String values.
+        let input = r#"digraph G {
+            step [timeout="20m", delay="500ms"]
+        }"#;
+        let graph = parse(input).unwrap();
+        let node = graph.nodes.get("step").unwrap();
+        // Quoted values become AttributeValue::String, not Duration
+        assert_eq!(
+            node.attrs.get("timeout"),
+            Some(&AttributeValue::String("20m".to_string()))
+        );
+        assert_eq!(
+            node.attrs.get("delay"),
+            Some(&AttributeValue::String("500ms".to_string()))
+        );
+        // But parse_duration_str can convert them
+        assert_eq!(
+            duration_serde::parse_duration_str("20m").unwrap(),
+            Duration::from_secs(20 * 60)
+        );
+        assert_eq!(
+            duration_serde::parse_duration_str("500ms").unwrap(),
+            Duration::from_millis(500)
+        );
     }
 
     #[test]

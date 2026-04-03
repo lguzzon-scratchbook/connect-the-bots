@@ -77,6 +77,7 @@ fn get_int_attr(attrs: &HashMap<String, AttributeValue>, key: &str) -> Option<i6
 fn get_duration_attr(attrs: &HashMap<String, AttributeValue>, key: &str) -> Option<Duration> {
     attrs.get(key).and_then(|v| match v {
         AttributeValue::Duration(d) => Some(*d),
+        AttributeValue::String(s) => attractor_dot::duration_serde::parse_duration_str(s).ok(),
         _ => None,
     })
 }
