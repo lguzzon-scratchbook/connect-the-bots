@@ -123,12 +123,7 @@ mod tests {
         let mut ctx = HashMap::new();
         ctx.insert("key".into(), serde_json::json!("value"));
 
-        PipelineCheckpoint::new(
-            "node_b".into(),
-            vec!["node_a".into()],
-            outcomes,
-            ctx,
-        )
+        PipelineCheckpoint::new("node_b".into(), vec!["node_a".into()], outcomes, ctx)
     }
 
     #[tokio::test]

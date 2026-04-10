@@ -110,11 +110,7 @@ impl Interviewer for RecordingInterviewer {
             .unwrap()
             .pop()
             .unwrap_or_else(|| Answer {
-                choice: question
-                    .choices
-                    .first()
-                    .cloned()
-                    .unwrap_or_default(),
+                choice: question.choices.first().cloned().unwrap_or_default(),
                 custom_text: None,
             });
         Ok(answer)

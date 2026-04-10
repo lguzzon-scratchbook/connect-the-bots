@@ -28,7 +28,10 @@ impl std::str::FromStr for LlmCliProvider {
             "codex" | "openai" => Ok(Self::Codex),
             "gemini" | "google" => Ok(Self::Gemini),
             other => {
-                tracing::warn!(provider = other, "Unknown llm_provider, defaulting to Claude");
+                tracing::warn!(
+                    provider = other,
+                    "Unknown llm_provider, defaulting to Claude"
+                );
                 Ok(Self::Claude)
             }
         }
@@ -189,8 +192,7 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
             if let Some(AttributeValue::String(tools)) = cfg.node.raw_attrs.get("allowed_tools") {
                 cmd.arg("--allowedTools").arg(tools);
             }
-            if let Some(AttributeValue::String(budget)) = cfg.node.raw_attrs.get("max_budget_usd")
-            {
+            if let Some(AttributeValue::String(budget)) = cfg.node.raw_attrs.get("max_budget_usd") {
                 cmd.arg("--max-budget-usd").arg(budget);
             }
             cmd
@@ -473,10 +475,7 @@ impl NodeHandler for CodergenHandler {
         // If this is a conditional node, instruct the LLM to output a label
         if node.shape == "diamond" || node.node_type.as_deref() == Some("conditional") {
             let edges = graph.outgoing_edges(&node.id);
-            let labels: Vec<_> = edges
-                .iter()
-                .filter_map(|e| e.label.as_deref())
-                .collect();
+            let labels: Vec<_> = edges.iter().filter_map(|e| e.label.as_deref()).collect();
             if !labels.is_empty() {
                 full_prompt.push_str(&format!(
                     "\n\nYou MUST end your response with exactly one of these labels on its own line: {}",
@@ -530,9 +529,7 @@ impl NodeHandler for CodergenHandler {
         // Child. On timeout, we kill the process tree — tokio::time::timeout
         // only drops the future, it does NOT kill the child process.
         let child_pid = child.id();
-        let timeout_dur = node
-            .timeout
-            .unwrap_or(std::time::Duration::from_secs(600));
+        let timeout_dur = node.timeout.unwrap_or(std::time::Duration::from_secs(600));
         let output = match tokio::time::timeout(timeout_dur, child.wait_with_output()).await {
             Ok(result) => result.map_err(|e| AttractorError::HandlerError {
                 handler: "codergen".into(),
@@ -598,15 +595,14 @@ impl NodeHandler for CodergenHandler {
         };
 
         // Extract preferred_label from the response for conditional routing
-        let preferred_label = if node.shape == "diamond"
-            || node.node_type.as_deref() == Some("conditional")
-        {
-            let edges = graph.outgoing_edges(&node.id);
-            let labels: Vec<String> = edges.iter().filter_map(|e| e.label.clone()).collect();
-            extract_label(&cli_result.text, &labels)
-        } else {
-            None
-        };
+        let preferred_label =
+            if node.shape == "diamond" || node.node_type.as_deref() == Some("conditional") {
+                let edges = graph.outgoing_edges(&node.id);
+                let labels: Vec<String> = edges.iter().filter_map(|e| e.label.clone()).collect();
+                extract_label(&cli_result.text, &labels)
+            } else {
+                None
+            };
 
         // Build context updates
         let mut updates = HashMap::new();
@@ -683,26 +679,47 @@ mod tests {
 
     #[test]
     fn provider_from_str_claude_variants() {
-        assert_eq!("claude".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Claude));
-        assert_eq!("anthropic".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Claude));
-        assert_eq!("CLAUDE".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Claude));
+        assert_eq!(
+            "claude".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Claude)
+        );
+        assert_eq!(
+            "anthropic".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Claude)
+        );
+        assert_eq!(
+            "CLAUDE".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Claude)
+        );
     }
 
     #[test]
     fn provider_from_str_codex_variants() {
         assert_eq!("codex".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Codex));
-        assert_eq!("openai".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Codex));
+        assert_eq!(
+            "openai".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Codex)
+        );
     }
 
     #[test]
     fn provider_from_str_gemini_variants() {
-        assert_eq!("gemini".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Gemini));
-        assert_eq!("google".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Gemini));
+        assert_eq!(
+            "gemini".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Gemini)
+        );
+        assert_eq!(
+            "google".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Gemini)
+        );
     }
 
     #[test]
     fn provider_from_str_unknown_defaults_to_claude() {
-        assert_eq!("llama".parse::<LlmCliProvider>(), Ok(LlmCliProvider::Claude));
+        assert_eq!(
+            "llama".parse::<LlmCliProvider>(),
+            Ok(LlmCliProvider::Claude)
+        );
     }
 
     #[test]
@@ -820,7 +837,10 @@ mod tests {
     fn parse_cli_output_empty_stdout_errors() {
         let result = parse_cli_output(LlmCliProvider::Claude, "", "some error", "n");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("produced no output"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("produced no output"));
     }
 
     // --- build_cli_command ---
@@ -838,7 +858,11 @@ mod tests {
             graph: &graph,
         };
         let cmd = build_cli_command(&cfg);
-        let args: Vec<_> = cmd.as_std().get_args().map(|a| a.to_str().unwrap()).collect();
+        let args: Vec<_> = cmd
+            .as_std()
+            .get_args()
+            .map(|a| a.to_str().unwrap())
+            .collect();
         assert!(args.contains(&"--output-format"));
         assert!(args.contains(&"json"));
         assert!(args.contains(&"--model"));
@@ -859,7 +883,11 @@ mod tests {
             graph: &graph,
         };
         let cmd = build_cli_command(&cfg);
-        let args: Vec<_> = cmd.as_std().get_args().map(|a| a.to_str().unwrap()).collect();
+        let args: Vec<_> = cmd
+            .as_std()
+            .get_args()
+            .map(|a| a.to_str().unwrap())
+            .collect();
         assert!(args.contains(&"--json"));
         assert!(args.contains(&"--yolo"));
         // Prompt should be last (positional)
@@ -881,7 +909,11 @@ mod tests {
             graph: &graph,
         };
         let cmd = build_cli_command(&cfg);
-        let args: Vec<_> = cmd.as_std().get_args().map(|a| a.to_str().unwrap()).collect();
+        let args: Vec<_> = cmd
+            .as_std()
+            .get_args()
+            .map(|a| a.to_str().unwrap())
+            .collect();
         assert!(args.contains(&"--approval-mode"));
         assert!(args.contains(&"yolo"));
         assert!(args.contains(&"--model"));

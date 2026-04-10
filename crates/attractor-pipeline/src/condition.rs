@@ -75,7 +75,9 @@ fn parse_clause(input: &str) -> Result<Clause, AttractorError> {
 
     let raw_value = input[key_end + op_len..].trim();
     if raw_value.is_empty() {
-        return Err(make_error(&format!("missing value after operator in '{input}'")));
+        return Err(make_error(&format!(
+            "missing value after operator in '{input}'"
+        )));
     }
 
     let value = strip_quotes(raw_value);

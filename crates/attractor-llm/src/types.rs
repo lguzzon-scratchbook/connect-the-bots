@@ -233,14 +233,32 @@ pub enum ReasoningEffort {
 #[derive(Debug, Clone)]
 pub enum StreamEvent {
     ContentStart,
-    ContentDelta { text: String },
+    ContentDelta {
+        text: String,
+    },
     ContentEnd,
-    ToolCallStart { id: String, name: String },
-    ToolCallDelta { id: String, json_chunk: String },
-    ToolCallEnd { id: String },
-    ThinkingDelta { text: String },
-    MessageStart { id: String, model: String },
-    MessageEnd { usage: Usage, finish_reason: FinishReason },
+    ToolCallStart {
+        id: String,
+        name: String,
+    },
+    ToolCallDelta {
+        id: String,
+        json_chunk: String,
+    },
+    ToolCallEnd {
+        id: String,
+    },
+    ThinkingDelta {
+        text: String,
+    },
+    MessageStart {
+        id: String,
+        model: String,
+    },
+    MessageEnd {
+        usage: Usage,
+        finish_reason: FinishReason,
+    },
     Error(Arc<attractor_types::AttractorError>),
 }
 

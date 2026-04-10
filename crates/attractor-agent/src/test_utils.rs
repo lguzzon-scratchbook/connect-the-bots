@@ -6,8 +6,7 @@ use std::sync::Mutex;
 use async_trait::async_trait;
 use attractor_llm::{FinishReason, ProviderAdapter, Request, Response, StreamEvent, Usage};
 use attractor_tools::{
-    DirEntry, ExecResult, ExecutionEnvironment, GrepOptions, Tool,
-    ToolDefinition as ToolsToolDef,
+    DirEntry, ExecResult, ExecutionEnvironment, GrepOptions, Tool, ToolDefinition as ToolsToolDef,
 };
 use attractor_types::AttractorError;
 use futures_core::Stream;
@@ -121,10 +120,7 @@ impl ProviderAdapter for SequenceMockProvider {
             }),
         }
     }
-    fn stream(
-        &self,
-        _request: &Request,
-    ) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
+    fn stream(&self, _request: &Request) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
         Box::pin(tokio_stream::empty::<StreamEvent>())
     }
     fn name(&self) -> &str {

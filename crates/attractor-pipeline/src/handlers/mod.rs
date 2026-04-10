@@ -58,4 +58,3 @@ pub(crate) mod tests {
         PipelineGraph::from_dot(parsed).unwrap()
     }
 }
-

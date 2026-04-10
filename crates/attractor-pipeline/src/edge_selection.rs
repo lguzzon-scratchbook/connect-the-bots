@@ -88,9 +88,7 @@ fn best_by_weight_then_lexical<'a>(edges: &[&'a PipelineEdge]) -> &'a PipelineEd
         .iter()
         .copied()
         .max_by(|a, b| {
-            a.weight
-                .cmp(&b.weight)
-                .then(b.to.cmp(&a.to)) // lexical ascending = reverse compare
+            a.weight.cmp(&b.weight).then(b.to.cmp(&a.to)) // lexical ascending = reverse compare
         })
         .unwrap()
 }

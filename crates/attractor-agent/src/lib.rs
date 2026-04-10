@@ -16,9 +16,7 @@ pub use subagent::{SubagentConfig, SubagentManager, SubagentStatus};
 
 use std::collections::VecDeque;
 
-use attractor_llm::{
-    ContentPart, Message, Request, ToolCallResult,
-};
+use attractor_llm::{ContentPart, Message, Request, ToolCallResult};
 use attractor_tools::{ExecutionEnvironment, ToolRegistry};
 use attractor_types::AttractorError;
 
@@ -168,7 +166,10 @@ impl AgentSession {
 
     /// Push a steering message to be injected at the next tool round boundary.
     pub fn steer(&mut self, message: String) {
-        tracing::debug!("Steering message queued: {}", &message[..message.len().min(80)]);
+        tracing::debug!(
+            "Steering message queued: {}",
+            &message[..message.len().min(80)]
+        );
         self.steering_queue.push(message);
     }
 
@@ -379,27 +380,25 @@ impl AgentSession {
             tracing::debug!(tool = %tc.name, id = %tc.id, "Executing tool call");
 
             let (content, is_error) = match self.tool_registry.get(&tc.name) {
-                Some(tool) => {
-                    match tool.execute(tc.arguments.clone(), self.env.as_ref()).await {
-                        Ok(output) => {
-                            let truncated = if output.len() > MAX_TOOL_OUTPUT_LEN {
-                                let mut t = output[..MAX_TOOL_OUTPUT_LEN].to_string();
-                                t.push_str(&format!(
-                                    "\n\n[WARNING: Output truncated. {} characters removed.]",
-                                    output.len() - MAX_TOOL_OUTPUT_LEN
-                                ));
-                                t
-                            } else {
-                                output
-                            };
-                            (truncated, false)
-                        }
-                        Err(e) => {
-                            tracing::debug!(tool = %tc.name, error = %e, "Tool execution failed");
-                            (format!("Error: {}", e), true)
-                        }
+                Some(tool) => match tool.execute(tc.arguments.clone(), self.env.as_ref()).await {
+                    Ok(output) => {
+                        let truncated = if output.len() > MAX_TOOL_OUTPUT_LEN {
+                            let mut t = output[..MAX_TOOL_OUTPUT_LEN].to_string();
+                            t.push_str(&format!(
+                                "\n\n[WARNING: Output truncated. {} characters removed.]",
+                                output.len() - MAX_TOOL_OUTPUT_LEN
+                            ));
+                            t
+                        } else {
+                            output
+                        };
+                        (truncated, false)
                     }
-                }
+                    Err(e) => {
+                        tracing::debug!(tool = %tc.name, error = %e, "Tool execution failed");
+                        (format!("Error: {}", e), true)
+                    }
+                },
                 None => {
                     let msg = format!("Unknown tool: {}", tc.name);
                     tracing::debug!("{}", msg);
@@ -426,10 +425,10 @@ impl AgentSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{make_client, EchoTool, MockEnv, SequenceMockProvider};
     use async_trait::async_trait;
     use attractor_llm::{FinishReason, Response, Usage};
     use attractor_tools::{Tool, ToolDefinition as ToolsToolDef};
-    use crate::test_utils::{make_client, EchoTool, MockEnv, SequenceMockProvider};
 
     // -----------------------------------------------------------------------
     // Test 1: Session creation with config
@@ -528,8 +527,12 @@ mod tests {
             &session.history()[1],
             Turn::Assistant { tool_calls, .. } if tool_calls.len() == 1
         ));
-        assert!(matches!(&session.history()[2], Turn::ToolResults { results } if results.len() == 1 && !results[0].is_error && results[0].content == "ping"));
-        assert!(matches!(&session.history()[3], Turn::Assistant { content, .. } if content == "The echo returned: ping"));
+        assert!(
+            matches!(&session.history()[2], Turn::ToolResults { results } if results.len() == 1 && !results[0].is_error && results[0].content == "ping")
+        );
+        assert!(
+            matches!(&session.history()[3], Turn::Assistant { content, .. } if content == "The echo returned: ping")
+        );
     }
 
     // -----------------------------------------------------------------------

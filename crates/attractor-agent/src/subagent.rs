@@ -16,7 +16,7 @@ pub struct SubagentConfig {
 pub enum SubagentStatus {
     Running,
     Completed(String), // final output
-    Failed(String),     // error message
+    Failed(String),    // error message
 }
 
 /// Tracks spawned subagents.

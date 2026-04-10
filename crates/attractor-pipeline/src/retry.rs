@@ -74,12 +74,12 @@ where
             Err(e) => return Err(e),
         }
     }
-    Err(last_err.unwrap_or_else(|| {
-        attractor_types::AttractorError::RetriesExhausted {
+    Err(
+        last_err.unwrap_or_else(|| attractor_types::AttractorError::RetriesExhausted {
             node: node_id.to_string(),
             attempts: max_retries + 1,
-        }
-    }))
+        }),
+    )
 }
 
 #[cfg(test)]
@@ -242,7 +242,10 @@ mod tests {
         .await;
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), AttractorError::AuthError { .. }));
+        assert!(matches!(
+            result.unwrap_err(),
+            AttractorError::AuthError { .. }
+        ));
         // Only called once — no retries for non-retryable errors
         assert_eq!(call_count.load(Ordering::SeqCst), 1);
     }

@@ -39,9 +39,9 @@ pub async fn cmd_launch(
         match crate::load_pipeline(dot_path) {
             Ok(graph) => {
                 let diagnostics = attractor_pipeline::validate(&graph);
-                let has_error = diagnostics.iter().any(|d| {
-                    matches!(d.severity, attractor_pipeline::Severity::Error)
-                });
+                let has_error = diagnostics
+                    .iter()
+                    .any(|d| matches!(d.severity, attractor_pipeline::Severity::Error));
                 if has_error {
                     println!("[FAIL] {}", name);
                     for diag in &diagnostics {

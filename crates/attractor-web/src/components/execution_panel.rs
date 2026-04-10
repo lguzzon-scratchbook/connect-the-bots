@@ -66,8 +66,7 @@ where
 
                         while let Some(Ok((_, msg))) = stream.next().await {
                             if let Some(data_str) = msg.data().as_string() {
-                                if let Ok(event) =
-                                    serde_json::from_str::<PipelineEvent>(&data_str)
+                                if let Ok(event) = serde_json::from_str::<PipelineEvent>(&data_str)
                                 {
                                     process_event(
                                         event,

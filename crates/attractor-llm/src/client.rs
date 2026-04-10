@@ -245,9 +245,7 @@ impl LlmClient {
             return Ok(provider);
         }
 
-        Err(AttractorError::Other(
-            "No providers registered".to_string(),
-        ))
+        Err(AttractorError::Other("No providers registered".to_string()))
     }
 
     /// Create from environment variables (detect available API keys).
@@ -584,10 +582,7 @@ mod tests {
             Some("anthropic")
         );
         assert_eq!(catalog.provider_for_model("gpt-4o"), Some("openai"));
-        assert_eq!(
-            catalog.provider_for_model("gemini-2.5-pro"),
-            Some("google")
-        );
+        assert_eq!(catalog.provider_for_model("gemini-2.5-pro"), Some("google"));
         assert_eq!(catalog.provider_for_model("unknown"), None);
     }
 }

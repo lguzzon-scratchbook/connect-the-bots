@@ -58,6 +58,10 @@ impl Tool for ShellTool {
             result.exit_code, result.stdout, result.stderr
         );
 
-        Ok(truncate_output(&output, MAX_OUTPUT_CHARS, TruncationMode::HeadTail))
+        Ok(truncate_output(
+            &output,
+            MAX_OUTPUT_CHARS,
+            TruncationMode::HeadTail,
+        ))
     }
 }

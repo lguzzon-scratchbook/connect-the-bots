@@ -166,8 +166,8 @@ mod ssr_impl {
     /// List all open projects sorted by most recently used.
     #[server]
     pub async fn list_open_projects() -> Result<Vec<Project>, ServerFnError> {
-        let pool = use_context::<SqlitePool>()
-            .ok_or_else(|| ServerFnError::new("No database pool"))?;
+        let pool =
+            use_context::<SqlitePool>().ok_or_else(|| ServerFnError::new("No database pool"))?;
 
         db::list_open_projects(&pool)
             .await
@@ -178,8 +178,8 @@ mod ssr_impl {
     /// Validates that the path exists and is a directory, then upserts into DB.
     #[server]
     pub async fn open_project(folder_path: String) -> Result<Project, ServerFnError> {
-        let pool = use_context::<SqlitePool>()
-            .ok_or_else(|| ServerFnError::new("No database pool"))?;
+        let pool =
+            use_context::<SqlitePool>().ok_or_else(|| ServerFnError::new("No database pool"))?;
 
         // Validate that the path exists and is a directory
         let path = PathBuf::from(&folder_path);
@@ -219,8 +219,8 @@ mod ssr_impl {
     /// Close a project (mark as not open) without deleting its data.
     #[server]
     pub async fn close_project(project_id: i64) -> Result<(), ServerFnError> {
-        let pool = use_context::<SqlitePool>()
-            .ok_or_else(|| ServerFnError::new("No database pool"))?;
+        let pool =
+            use_context::<SqlitePool>().ok_or_else(|| ServerFnError::new("No database pool"))?;
 
         db::close_project(&pool, project_id)
             .await
@@ -230,8 +230,8 @@ mod ssr_impl {
     /// Get cached PRD and Spec documents for a project.
     #[server]
     pub async fn get_cached_documents(project_id: i64) -> Result<CachedDocs, ServerFnError> {
-        let pool = use_context::<SqlitePool>()
-            .ok_or_else(|| ServerFnError::new("No database pool"))?;
+        let pool =
+            use_context::<SqlitePool>().ok_or_else(|| ServerFnError::new("No database pool"))?;
 
         let docs = db::get_documents(&pool, project_id)
             .await

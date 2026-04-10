@@ -207,7 +207,9 @@ pub fn default_registry_with_interviewer(
     interviewer: std::sync::Arc<dyn crate::interviewer::Interviewer>,
 ) -> HandlerRegistry {
     let mut reg = default_registry();
-    reg.register(crate::handlers::wait_human::WaitHumanHandler::new(interviewer));
+    reg.register(crate::handlers::wait_human::WaitHumanHandler::new(
+        interviewer,
+    ));
     reg
 }
 

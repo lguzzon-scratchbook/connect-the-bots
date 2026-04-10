@@ -98,10 +98,16 @@ async fn simple_linear_pipeline_completes_in_order() {
         .iter()
         .filter(|d| d.severity == attractor_pipeline::Severity::Error)
         .collect();
-    assert!(errors.is_empty(), "Expected no validation errors: {errors:?}");
+    assert!(
+        errors.is_empty(),
+        "Expected no validation errors: {errors:?}"
+    );
 
     // Execute
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     // All 3 nodes should complete in order
     assert_eq!(
@@ -145,7 +151,10 @@ async fn branching_pipeline_routes_via_condition() {
         }"#,
     );
 
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     // The conditional handler returns Success, so outcome=success.
     // The edge to path_a has condition="outcome=success" which should match.
@@ -181,7 +190,10 @@ async fn goal_gate_satisfied_pipeline_completes() {
     );
 
     // The default codergen handler returns Success, satisfying the goal gate.
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     assert!(
         result.completed_nodes.contains(&"review".to_string()),
@@ -214,7 +226,10 @@ async fn validation_catches_missing_start_node() {
 
     // validate_or_raise should return an error
     let result = validate_or_raise(&graph);
-    assert!(result.is_err(), "validation should fail without a start node");
+    assert!(
+        result.is_err(),
+        "validation should fail without a start node"
+    );
 
     let err_msg = result.unwrap_err().to_string();
     assert!(
@@ -225,8 +240,9 @@ async fn validation_catches_missing_start_node() {
     // Also verify the advisory validate() produces an Error-level diagnostic
     let diags = validate(&graph);
     assert!(
-        diags.iter().any(|d| d.rule == "start_node"
-            && d.severity == attractor_pipeline::Severity::Error),
+        diags
+            .iter()
+            .any(|d| d.rule == "start_node" && d.severity == attractor_pipeline::Severity::Error),
         "Expected start_node error diagnostic; got: {diags:?}"
     );
 }
@@ -313,7 +329,10 @@ async fn context_propagation_across_nodes() {
         }"#,
     );
 
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     // The codergen handler sets "<node_id>.prompt" and "<node_id>.completed" in context_updates.
     // These should propagate through the engine into final_context.
@@ -378,10 +397,16 @@ async fn ten_node_linear_pipeline_completes() {
         .iter()
         .filter(|d| d.severity == attractor_pipeline::Severity::Error)
         .collect();
-    assert!(errors.is_empty(), "No validation errors expected: {errors:?}");
+    assert!(
+        errors.is_empty(),
+        "No validation errors expected: {errors:?}"
+    );
 
     // Execute
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     // Total: start + 8 steps + done = 10 nodes
     assert_eq!(
@@ -440,7 +465,10 @@ async fn edge_selection_respects_condition_over_weight() {
         }"#,
     );
 
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     assert!(
         result.completed_nodes.contains(&"low_weight".to_string()),
@@ -496,7 +524,10 @@ async fn goal_gate_unsatisfied_without_retry_returns_error() {
     let exec = PipelineExecutor::new(registry);
     let result = exec.run(&graph).await;
 
-    assert!(result.is_err(), "pipeline should fail with unsatisfied goal gate");
+    assert!(
+        result.is_err(),
+        "pipeline should fail with unsatisfied goal gate"
+    );
     let err = result.unwrap_err();
     let err_msg = err.to_string();
     assert!(
@@ -532,10 +563,7 @@ async fn goal_gate_with_retry_target_retries_then_succeeds() {
                 Ok(Outcome::fail("first attempt fails"))
             } else {
                 let mut updates = HashMap::new();
-                updates.insert(
-                    format!("{}.completed", node.id),
-                    serde_json::json!(true),
-                );
+                updates.insert(format!("{}.completed", node.id), serde_json::json!(true));
                 Ok(Outcome {
                     status: StageStatus::Success,
                     preferred_label: None,
@@ -567,7 +595,10 @@ async fn goal_gate_with_retry_target_retries_then_succeeds() {
     });
 
     let exec = PipelineExecutor::new(registry);
-    let result = exec.run(&graph).await.expect("pipeline should succeed after retry");
+    let result = exec
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed after retry");
 
     // The handler was called at least twice (once fail, once success)
     assert!(
@@ -669,7 +700,10 @@ async fn edge_weight_tiebreaker_selects_highest_weight() {
         }"#,
     );
 
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     assert!(
         result.completed_nodes.contains(&"high".to_string()),
@@ -700,7 +734,10 @@ async fn graph_goal_attribute_propagates_to_context() {
 
     assert_eq!(graph.goal, "Build a working pipeline");
 
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     // Graph attrs are loaded into context during initialization
     assert_eq!(
@@ -733,14 +770,15 @@ async fn condition_routes_to_fallback_on_no_match() {
         }"#,
     );
 
-    let result = executor().run(&graph).await.expect("pipeline should succeed");
+    let result = executor()
+        .run(&graph)
+        .await
+        .expect("pipeline should succeed");
 
     // Conditional handler returns Success, so outcome=success, which does NOT match
     // the condition "outcome=fail". The unconditional edge to default_path should be taken.
     assert!(
-        result
-            .completed_nodes
-            .contains(&"default_path".to_string()),
+        result.completed_nodes.contains(&"default_path".to_string()),
         "default_path should be taken when condition does not match; completed: {:?}",
         result.completed_nodes
     );

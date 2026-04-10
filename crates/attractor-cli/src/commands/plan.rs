@@ -35,7 +35,11 @@ pub async fn cmd_plan(
     }
 
     // Print success message
-    println!("Created {} at {}", if prd { "PRD" } else { "spec" }, output_path.display());
+    println!(
+        "Created {} at {}",
+        if prd { "PRD" } else { "spec" },
+        output_path.display()
+    );
 
     if from_prompt.is_none() {
         println!("\nNext steps:");
@@ -45,7 +49,10 @@ pub async fn cmd_plan(
             println!("3. Create a beads epic: bd create --type=epic");
             println!("4. Link the epic ID in the metadata section");
         } else {
-            println!("3. Create beads tasks: bd decompose {}", output_path.display());
+            println!(
+                "3. Create beads tasks: bd decompose {}",
+                output_path.display()
+            );
         }
     }
 
@@ -67,7 +74,11 @@ async fn generate_with_claude(
     output: &std::path::Path,
     is_prd: bool,
 ) -> anyhow::Result<()> {
-    let doc_type = if is_prd { "PRD" } else { "Technical Specification" };
+    let doc_type = if is_prd {
+        "PRD"
+    } else {
+        "Technical Specification"
+    };
 
     // Build prompt for Claude
     let prompt = format!(

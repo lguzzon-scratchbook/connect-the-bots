@@ -61,6 +61,10 @@ impl Tool for GlobTool {
             .collect::<Vec<_>>()
             .join("\n");
 
-        Ok(truncate_output(&output, MAX_OUTPUT_CHARS, TruncationMode::Tail))
+        Ok(truncate_output(
+            &output,
+            MAX_OUTPUT_CHARS,
+            TruncationMode::Tail,
+        ))
     }
 }

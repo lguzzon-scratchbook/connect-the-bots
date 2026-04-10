@@ -18,7 +18,13 @@ fn start_spinner(message: &str) -> SpinnerGuard {
             let elapsed = start.elapsed().as_secs();
             let mins = elapsed / 60;
             let secs = elapsed % 60;
-            eprint!("\r\x1b[2K\x1b[36m{}\x1b[0m {} \x1b[2m{}:{:02}\x1b[0m", FRAMES[i % FRAMES.len()], msg, mins, secs);
+            eprint!(
+                "\r\x1b[2K\x1b[36m{}\x1b[0m {} \x1b[2m{}:{:02}\x1b[0m",
+                FRAMES[i % FRAMES.len()],
+                msg,
+                mins,
+                secs
+            );
             let _ = std::io::stderr().flush();
             std::thread::sleep(std::time::Duration::from_millis(80));
             i += 1;
@@ -28,7 +34,10 @@ fn start_spinner(message: &str) -> SpinnerGuard {
         let _ = std::io::stderr().flush();
     });
 
-    SpinnerGuard { done, handle: Some(handle) }
+    SpinnerGuard {
+        done,
+        handle: Some(handle),
+    }
 }
 
 struct SpinnerGuard {
@@ -52,22 +61,31 @@ pub async fn cmd_generate(
     verbose: bool,
 ) -> anyhow::Result<()> {
     // Read spec (required)
-    let spec_content = std::fs::read_to_string(spec_path)
-        .map_err(|e| anyhow::anyhow!("Failed to read spec file '{}': {}", spec_path.display(), e))?;
+    let spec_content = std::fs::read_to_string(spec_path).map_err(|e| {
+        anyhow::anyhow!("Failed to read spec file '{}': {}", spec_path.display(), e)
+    })?;
 
     // Read PRD (optional)
-    let prd_content = match prd_path {
-        Some(path) => Some(
-            std::fs::read_to_string(path)
-                .map_err(|e| anyhow::anyhow!("Failed to read PRD file '{}': {}", path.display(), e))?,
-        ),
-        None => None,
-    };
+    let prd_content =
+        match prd_path {
+            Some(path) => Some(std::fs::read_to_string(path).map_err(|e| {
+                anyhow::anyhow!("Failed to read PRD file '{}': {}", path.display(), e)
+            })?),
+            None => None,
+        };
 
     if verbose {
-        eprintln!("[debug] spec: {} ({} bytes)", spec_path.display(), spec_content.len());
+        eprintln!(
+            "[debug] spec: {} ({} bytes)",
+            spec_path.display(),
+            spec_content.len()
+        );
         if let Some(p) = prd_path {
-            eprintln!("[debug] prd: {} ({} bytes)", p.display(), prd_content.as_ref().map_or(0, |c| c.len()));
+            eprintln!(
+                "[debug] prd: {} ({} bytes)",
+                p.display(),
+                prd_content.as_ref().map_or(0, |c| c.len())
+            );
         }
     }
 
@@ -160,7 +178,10 @@ pub async fn cmd_generate(
 
     if verbose {
         eprintln!("[debug] extracted DOT: {} bytes", dot_content.len());
-        eprintln!("[debug] first 200 chars:\n{}", &dot_content[..dot_content.len().min(200)]);
+        eprintln!(
+            "[debug] first 200 chars:\n{}",
+            &dot_content[..dot_content.len().min(200)]
+        );
     }
 
     // Determine output path
@@ -195,9 +216,9 @@ pub async fn cmd_generate(
     };
     let diagnostics = attractor_pipeline::validate(&graph);
 
-    let has_error = diagnostics.iter().any(|d| {
-        matches!(d.severity, attractor_pipeline::Severity::Error)
-    });
+    let has_error = diagnostics
+        .iter()
+        .any(|d| matches!(d.severity, attractor_pipeline::Severity::Error));
 
     if has_error {
         println!("Warning: pipeline has validation errors:");
@@ -217,7 +238,10 @@ pub async fn cmd_generate(
         println!("  PRD: {}", prd.display());
     }
     println!("  Nodes: {}", node_count);
-    println!("  Validation: {}", if has_error { "FAILED" } else { "PASSED" });
+    println!(
+        "  Validation: {}",
+        if has_error { "FAILED" } else { "PASSED" }
+    );
 
     if !has_error {
         println!("\nNext steps:");
@@ -230,10 +254,7 @@ pub async fn cmd_generate(
 
 fn build_prompt(spec: &str, prd: Option<&str>) -> String {
     let prd_section = match prd {
-        Some(content) => format!(
-            "## PRD (Product Requirements Document)\n\n{}\n\n",
-            content
-        ),
+        Some(content) => format!("## PRD (Product Requirements Document)\n\n{}\n\n", content),
         None => String::new(),
     };
 
@@ -381,13 +402,21 @@ pub async fn cmd_generate_dir(
         .unwrap_or_else(|| std::path::PathBuf::from("pipelines"));
     std::fs::create_dir_all(&out_dir)?;
 
-    println!("Found {} spec(s) in {} (lexical order):", specs.len(), dir.display());
+    println!(
+        "Found {} spec(s) in {} (lexical order):",
+        specs.len(),
+        dir.display()
+    );
     for spec in &specs {
         let stem = spec.file_stem().and_then(|s| s.to_str()).unwrap_or("?");
         let prd_stem = stem.replace("-spec", "-prd");
         let prd_path = dir.join(format!("{}.md", prd_stem));
         let prd_status = if prd_path.exists() { "+ PRD" } else { "no PRD" };
-        println!("  {} ({})", spec.file_name().unwrap_or_default().to_string_lossy(), prd_status);
+        println!(
+            "  {} ({})",
+            spec.file_name().unwrap_or_default().to_string_lossy(),
+            prd_status
+        );
     }
     println!();
 
@@ -534,7 +563,10 @@ mod tests {
         let result = build_prompt("SPEC_CONTENT", Some("PRD_CONTENT"));
         let prd_pos = result.find("PRD_CONTENT").unwrap();
         let spec_pos = result.find("SPEC_CONTENT").unwrap();
-        assert!(prd_pos < spec_pos, "PRD should appear before spec in prompt");
+        assert!(
+            prd_pos < spec_pos,
+            "PRD should appear before spec in prompt"
+        );
     }
 
     // ── extract_digraph ────────────────────────────────────────────

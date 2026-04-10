@@ -10,10 +10,7 @@ use leptos::prelude::*;
 /// - `folder`: Absolute path to the project directory where the PTY should spawn
 /// - `container_id`: Unique ID for this terminal instance (e.g., "terminal-1")
 #[component]
-pub fn Terminal(
-    #[prop(into)] folder: String,
-    #[prop(into)] container_id: String,
-) -> impl IntoView {
+pub fn Terminal(#[prop(into)] folder: String, #[prop(into)] container_id: String) -> impl IntoView {
     // folder is used only in the hydrate feature (client-side JS init)
     let _folder = folder;
 
@@ -54,11 +51,13 @@ pub fn Terminal(
             let container_id_cleanup = container_id_clone.clone();
             on_cleanup(move || {
                 let window = web_sys::window().unwrap();
-                if let Ok(func) = js_sys::Reflect::get(&window, &JsValue::from_str("disposeTerminal"))
+                if let Ok(func) =
+                    js_sys::Reflect::get(&window, &JsValue::from_str("disposeTerminal"))
                 {
                     if func.is_function() {
                         let func: js_sys::Function = func.into();
-                        let _ = func.call1(&JsValue::NULL, &JsValue::from_str(&container_id_cleanup));
+                        let _ =
+                            func.call1(&JsValue::NULL, &JsValue::from_str(&container_id_cleanup));
                     }
                 }
             });

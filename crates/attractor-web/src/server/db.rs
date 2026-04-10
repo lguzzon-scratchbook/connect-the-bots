@@ -22,13 +22,11 @@ pub struct CachedDoc {
 /// Runs schema creation (idempotent).
 pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
     // Determine database path: ~/.pas/web.db
-    let home_dir = std::env::var("HOME")
-        .expect("HOME environment variable not set");
+    let home_dir = std::env::var("HOME").expect("HOME environment variable not set");
     let pas_dir = PathBuf::from(home_dir).join(".pas");
 
     // Create directory if it doesn't exist
-    std::fs::create_dir_all(&pas_dir)
-        .expect("Failed to create ~/.pas directory");
+    std::fs::create_dir_all(&pas_dir).expect("Failed to create ~/.pas directory");
 
     let db_path = pas_dir.join("web.db");
     let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
@@ -76,10 +74,7 @@ pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
 ///
 /// If the project doesn't exist, it's created with the folder basename as the name.
 /// If it exists, `is_open` is set to 1 and `last_used` is updated.
-pub async fn upsert_project(
-    pool: &SqlitePool,
-    folder_path: &str,
-) -> Result<Project, sqlx::Error> {
+pub async fn upsert_project(pool: &SqlitePool, folder_path: &str) -> Result<Project, sqlx::Error> {
     // Extract project name from folder path
     let name = PathBuf::from(folder_path)
         .file_name()
@@ -419,9 +414,14 @@ mod tests {
             .await
             .expect("Failed to create project");
 
-        upsert_document(&pool, project.id, "prd", "# Product Requirements\n\nGoal: Build a thing")
-            .await
-            .expect("Failed to upsert document");
+        upsert_document(
+            &pool,
+            project.id,
+            "prd",
+            "# Product Requirements\n\nGoal: Build a thing",
+        )
+        .await
+        .expect("Failed to upsert document");
 
         let docs = get_documents(&pool, project.id)
             .await
@@ -429,7 +429,10 @@ mod tests {
 
         assert_eq!(docs.len(), 1);
         assert_eq!(docs[0].doc_type, "prd");
-        assert_eq!(docs[0].content, "# Product Requirements\n\nGoal: Build a thing");
+        assert_eq!(
+            docs[0].content,
+            "# Product Requirements\n\nGoal: Build a thing"
+        );
     }
 
     #[tokio::test]

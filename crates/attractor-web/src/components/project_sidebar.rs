@@ -1,8 +1,8 @@
+use crate::components::folder_picker::FolderPicker;
+use crate::server::projects::{close_project, Project};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos::web_sys;
-use crate::components::folder_picker::FolderPicker;
-use crate::server::projects::{close_project, Project};
 
 /// ProjectSidebar component for managing open projects.
 ///

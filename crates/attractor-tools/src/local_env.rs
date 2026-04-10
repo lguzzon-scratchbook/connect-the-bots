@@ -36,16 +36,9 @@ impl LocalExecutionEnvironment {
 
     /// Filter environment variables, removing secrets and keeping safe defaults.
     fn filtered_env() -> HashMap<String, String> {
-        let exclude_suffixes: &[&str] = &[
-            "_api_key",
-            "_secret",
-            "_token",
-            "_password",
-            "_credential",
-        ];
-        let always_include: &[&str] = &[
-            "PATH", "HOME", "USER", "SHELL", "LANG", "TERM", "TMPDIR",
-        ];
+        let exclude_suffixes: &[&str] =
+            &["_api_key", "_secret", "_token", "_password", "_credential"];
+        let always_include: &[&str] = &["PATH", "HOME", "USER", "SHELL", "LANG", "TERM", "TMPDIR"];
 
         let mut result = HashMap::new();
         for (key, value) in std::env::vars() {
@@ -98,7 +91,9 @@ impl ExecutionEnvironment for LocalExecutionEnvironment {
         cwd: Option<&Path>,
         env_vars: Option<&HashMap<String, String>>,
     ) -> attractor_types::Result<ExecResult> {
-        let work_dir = cwd.map(|p| self.resolve(p)).unwrap_or_else(|| self.working_dir.clone());
+        let work_dir = cwd
+            .map(|p| self.resolve(p))
+            .unwrap_or_else(|| self.working_dir.clone());
 
         let mut cmd = tokio::process::Command::new("bash");
         cmd.args(["-c", command])
@@ -203,20 +198,18 @@ impl ExecutionEnvironment for LocalExecutionEnvironment {
         base: &Path,
     ) -> attractor_types::Result<Vec<PathBuf>> {
         let resolved = self.resolve(base);
-        let glob = Glob::new(pattern).map_err(|e| {
-            attractor_types::AttractorError::ToolError {
-                tool: "glob".into(),
-                message: e.to_string(),
-            }
+        let glob = Glob::new(pattern).map_err(|e| attractor_types::AttractorError::ToolError {
+            tool: "glob".into(),
+            message: e.to_string(),
         })?;
         let mut builder = GlobSetBuilder::new();
         builder.add(glob);
-        let set = builder.build().map_err(|e| {
-            attractor_types::AttractorError::ToolError {
+        let set = builder
+            .build()
+            .map_err(|e| attractor_types::AttractorError::ToolError {
                 tool: "glob".into(),
                 message: e.to_string(),
-            }
-        })?;
+            })?;
 
         let mut matches = Vec::new();
         collect_glob_matches(&resolved, &resolved, &set, &mut matches).await?;
@@ -346,7 +339,14 @@ async fn grep_path_recursive(
             if results.len() >= max {
                 break;
             }
-            Box::pin(grep_path_recursive(re, &entry.path(), options, results, max)).await?;
+            Box::pin(grep_path_recursive(
+                re,
+                &entry.path(),
+                options,
+                results,
+                max,
+            ))
+            .await?;
         }
     }
     Ok(())
@@ -436,10 +436,7 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let env = make_env(&dir);
 
-        let result = env
-            .exec_command("sleep 60", 100, None, None)
-            .await
-            .unwrap();
+        let result = env.exec_command("sleep 60", 100, None, None).await.unwrap();
         assert!(result.timed_out);
         assert!(result.duration_ms >= 100);
     }

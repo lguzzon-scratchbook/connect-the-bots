@@ -154,7 +154,9 @@ fn edge_def_to_pipeline_edge(
         to: edge_def.to.clone(),
         label: get_string_attr(&attrs, "label"),
         condition: get_string_attr(&attrs, "condition"),
-        weight: get_int_attr(&attrs, "weight").map(|v| v as i32).unwrap_or(0),
+        weight: get_int_attr(&attrs, "weight")
+            .map(|v| v as i32)
+            .unwrap_or(0),
         fidelity: get_string_attr(&attrs, "fidelity"),
         thread_id: get_string_attr(&attrs, "thread_id"),
         loop_restart: get_bool_attr(&attrs, "loop_restart").unwrap_or(false),
@@ -231,11 +233,7 @@ impl PipelineGraph {
         self.nodes
             .values()
             .find(|n| n.shape == "Mdiamond")
-            .or_else(|| {
-                self.nodes
-                    .get("start")
-                    .or_else(|| self.nodes.get("Start"))
-            })
+            .or_else(|| self.nodes.get("start").or_else(|| self.nodes.get("Start")))
     }
 
     /// Find the exit node: shape == "Msquare".
@@ -278,12 +276,14 @@ mod tests {
 
     #[test]
     fn from_dot_simple_linear_pipeline() {
-        let pg = parse_and_build(r#"digraph Pipeline {
+        let pg = parse_and_build(
+            r#"digraph Pipeline {
             start [shape="Mdiamond"]
             process [label="Process Data"]
             done [shape="Msquare"]
             start -> process -> done
-        }"#);
+        }"#,
+        );
 
         assert_eq!(pg.name, "Pipeline");
         assert_eq!(pg.all_edges().len(), 2);
@@ -295,11 +295,13 @@ mod tests {
 
     #[test]
     fn start_node_finds_mdiamond() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             begin [shape="Mdiamond", label="Start Here"]
             work [shape="box"]
             begin -> work
-        }"#);
+        }"#,
+        );
 
         let start = pg.start_node().unwrap();
         assert_eq!(start.id, "begin");
@@ -308,11 +310,13 @@ mod tests {
 
     #[test]
     fn start_node_falls_back_to_id() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             start [label="Go"]
             work [shape="box"]
             start -> work
-        }"#);
+        }"#,
+        );
 
         let start = pg.start_node().unwrap();
         assert_eq!(start.id, "start");
@@ -320,10 +324,12 @@ mod tests {
 
     #[test]
     fn exit_node_finds_msquare() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             work -> done
             done [shape="Msquare"]
-        }"#);
+        }"#,
+        );
 
         let exit = pg.exit_node().unwrap();
         assert_eq!(exit.id, "done");
@@ -332,11 +338,13 @@ mod tests {
 
     #[test]
     fn outgoing_edges_returns_correct_edges() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             A -> B [label="first"]
             A -> C [label="second"]
             B -> C
-        }"#);
+        }"#,
+        );
 
         let edges_a = pg.outgoing_edges("A");
         assert_eq!(edges_a.len(), 2);
@@ -354,9 +362,11 @@ mod tests {
 
     #[test]
     fn typed_attribute_extraction() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             step [max_retries=3, goal_gate=true, timeout=30s, allow_partial=false]
-        }"#);
+        }"#,
+        );
 
         let node = pg.node("step").unwrap();
         assert_eq!(node.max_retries, 3);
@@ -368,14 +378,16 @@ mod tests {
 
     #[test]
     fn subgraph_nodes_included() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             start -> A
             subgraph cluster_inner {
                 node [shape="ellipse"]
                 A -> B
             }
             B -> done
-        }"#);
+        }"#,
+        );
 
         // Subgraph nodes should be present
         assert!(pg.node("A").is_some());
@@ -391,19 +403,23 @@ mod tests {
 
     #[test]
     fn goal_extracted_from_graph_attrs() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             goal = "Complete the pipeline"
             A -> B
-        }"#);
+        }"#,
+        );
 
         assert_eq!(pg.goal, "Complete the pipeline");
     }
 
     #[test]
     fn edge_weight_and_condition() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             A -> B [weight=5, condition="status == success", loop_restart=true]
-        }"#);
+        }"#,
+        );
 
         let edges = pg.outgoing_edges("A");
         assert_eq!(edges.len(), 1);
@@ -414,9 +430,11 @@ mod tests {
 
     #[test]
     fn default_shape_is_box() {
-        let pg = parse_and_build(r#"digraph G {
+        let pg = parse_and_build(
+            r#"digraph G {
             plain_node [label="No shape set"]
-        }"#);
+        }"#,
+        );
 
         assert_eq!(pg.node("plain_node").unwrap().shape, "box");
     }

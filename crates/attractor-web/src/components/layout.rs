@@ -17,9 +17,7 @@ pub enum RightPanel {
 /// Accepts a Project prop and renders the terminal + document panels for that project.
 /// Multiple instances can coexist simultaneously (one per open project).
 #[component]
-pub fn ProjectView(
-    #[prop(into)] project: Project,
-) -> impl IntoView {
+pub fn ProjectView(#[prop(into)] project: Project) -> impl IntoView {
     // Extract project fields for use in component
     let project_id = project.id;
     let folder = project.folder_path.clone();

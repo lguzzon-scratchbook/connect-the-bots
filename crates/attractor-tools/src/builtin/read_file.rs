@@ -79,6 +79,10 @@ impl Tool for ReadFileTool {
             .collect();
 
         let output = numbered.join("\n");
-        Ok(truncate_output(&output, MAX_OUTPUT_CHARS, TruncationMode::HeadTail))
+        Ok(truncate_output(
+            &output,
+            MAX_OUTPUT_CHARS,
+            TruncationMode::HeadTail,
+        ))
     }
 }

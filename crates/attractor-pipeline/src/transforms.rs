@@ -21,13 +21,10 @@ pub fn apply_transforms(graph: &mut PipelineGraph) -> attractor_types::Result<()
 
 /// Apply model stylesheet from graph attributes.
 fn apply_model_stylesheet(graph: &mut PipelineGraph) -> attractor_types::Result<()> {
-    let stylesheet_str = graph
-        .attrs
-        .get("model_stylesheet")
-        .and_then(|v| match v {
-            attractor_dot::AttributeValue::String(s) => Some(s.clone()),
-            _ => None,
-        });
+    let stylesheet_str = graph.attrs.get("model_stylesheet").and_then(|v| match v {
+        attractor_dot::AttributeValue::String(s) => Some(s.clone()),
+        _ => None,
+    });
 
     if let Some(css) = stylesheet_str {
         let stylesheet = parse_stylesheet(&css)?;

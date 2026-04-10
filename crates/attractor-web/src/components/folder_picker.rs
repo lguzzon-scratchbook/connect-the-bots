@@ -1,7 +1,7 @@
+use crate::server::projects::{list_directory, open_project, DirEntry, Project};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use leptos::web_sys;
-use crate::server::projects::{list_directory, open_project, DirEntry, Project};
 
 /// FolderPicker component for selecting a project folder.
 ///
@@ -13,10 +13,7 @@ use crate::server::projects::{list_directory, open_project, DirEntry, Project};
 /// - `on_select`: Called with the opened Project when a folder is selected
 /// - `on_close`: Called to dismiss the modal
 #[component]
-pub fn FolderPicker<F>(
-    on_select: F,
-    on_close: impl Fn() + Clone + 'static,
-) -> impl IntoView
+pub fn FolderPicker<F>(on_select: F, on_close: impl Fn() + Clone + 'static) -> impl IntoView
 where
     F: Fn(Project) + Clone + Send + Sync + 'static,
 {

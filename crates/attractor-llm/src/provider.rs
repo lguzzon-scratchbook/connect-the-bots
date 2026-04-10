@@ -10,7 +10,10 @@ use crate::{Request, Response, StreamEvent};
 
 #[async_trait]
 pub trait ProviderAdapter: Send + Sync {
-    async fn complete(&self, request: &Request) -> Result<Response, attractor_types::AttractorError>;
+    async fn complete(
+        &self,
+        request: &Request,
+    ) -> Result<Response, attractor_types::AttractorError>;
     fn stream(&self, request: &Request) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>>;
     fn name(&self) -> &str;
     fn default_model(&self) -> &str;
@@ -38,7 +41,10 @@ impl DynProvider {
         self.0.complete(request).await
     }
 
-    pub fn stream(&self, request: &Request) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
+    pub fn stream(
+        &self,
+        request: &Request,
+    ) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
         self.0.stream(request)
     }
 

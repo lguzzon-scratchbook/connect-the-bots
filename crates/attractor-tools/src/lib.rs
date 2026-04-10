@@ -75,10 +75,7 @@ mod tests {
         }
         async fn write_file(&self, path: &Path, content: &str) -> attractor_types::Result<()> {
             let key = path.to_string_lossy().to_string();
-            self.files
-                .lock()
-                .unwrap()
-                .insert(key, content.to_string());
+            self.files.lock().unwrap().insert(key, content.to_string());
             Ok(())
         }
         async fn file_exists(&self, path: &Path) -> attractor_types::Result<bool> {

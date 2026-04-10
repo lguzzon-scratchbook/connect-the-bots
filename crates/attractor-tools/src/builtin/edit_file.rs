@@ -82,10 +82,7 @@ impl Tool for EditFileTool {
         if match_count == 0 {
             return Err(attractor_types::AttractorError::ToolError {
                 tool: "edit_file".into(),
-                message: format!(
-                    "old_string not found in {}",
-                    file_path
-                ),
+                message: format!("old_string not found in {}", file_path),
             });
         }
 

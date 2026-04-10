@@ -45,11 +45,7 @@ impl OpenAiAdapter {
 
     fn build_request_body(&self, request: &Request) -> serde_json::Value {
         // 1. Convert messages to input array
-        let input: Vec<serde_json::Value> = request
-            .messages
-            .iter()
-            .map(convert_message)
-            .collect();
+        let input: Vec<serde_json::Value> = request.messages.iter().map(convert_message).collect();
 
         // 2. Build body
         let mut body = json!({
@@ -218,7 +214,10 @@ fn convert_message(msg: &Message) -> serde_json::Value {
 
     // For assistant messages with tool calls, we need special handling
     if msg.role == Role::Assistant {
-        let has_tool_calls = msg.content.iter().any(|p| matches!(p, ContentPart::ToolCall { .. }));
+        let has_tool_calls = msg
+            .content
+            .iter()
+            .any(|p| matches!(p, ContentPart::ToolCall { .. }));
         if has_tool_calls {
             let mut text_parts = Vec::new();
             let mut tool_call_parts = Vec::new();
@@ -348,12 +347,15 @@ impl ProviderAdapter for OpenAiAdapter {
             })?;
 
         let status = resp.status();
-        let response_body = resp.text().await.map_err(|e| AttractorError::ProviderError {
-            provider: "openai".into(),
-            status: 0,
-            message: e.to_string(),
-            retryable: true,
-        })?;
+        let response_body = resp
+            .text()
+            .await
+            .map_err(|e| AttractorError::ProviderError {
+                provider: "openai".into(),
+                status: 0,
+                message: e.to_string(),
+                retryable: true,
+            })?;
 
         if !status.is_success() {
             return Err(map_error(status, &response_body));
@@ -370,10 +372,7 @@ impl ProviderAdapter for OpenAiAdapter {
         self.parse_response(json)
     }
 
-    fn stream(
-        &self,
-        _request: &Request,
-    ) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
+    fn stream(&self, _request: &Request) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
         Box::pin(tokio_stream::empty::<StreamEvent>())
     }
 
@@ -414,10 +413,7 @@ mod tests {
     fn make_basic_request() -> Request {
         Request {
             model: "gpt-4o".into(),
-            messages: vec![
-                Message::system("You are helpful."),
-                Message::user("Hello"),
-            ],
+            messages: vec![Message::system("You are helpful."), Message::user("Hello")],
             tools: vec![],
             tool_choice: None,
             max_tokens: Some(4096),
@@ -593,8 +589,8 @@ mod tests {
 
     #[test]
     fn with_base_url_sets_custom_url() {
-        let adapter = OpenAiAdapter::new("key".into())
-            .with_base_url("https://custom.api.com".into());
+        let adapter =
+            OpenAiAdapter::new("key".into()).with_base_url("https://custom.api.com".into());
         assert_eq!(adapter.base_url, "https://custom.api.com");
     }
 
@@ -604,7 +600,13 @@ mod tests {
             reqwest::StatusCode::TOO_MANY_REQUESTS,
             r#"{"error": {"message": "rate limited", "retry_after": 3.0}}"#,
         );
-        assert!(matches!(err, AttractorError::RateLimited { retry_after_ms: 3000, .. }));
+        assert!(matches!(
+            err,
+            AttractorError::RateLimited {
+                retry_after_ms: 3000,
+                ..
+            }
+        ));
     }
 
     #[test]
@@ -623,7 +625,9 @@ mod tests {
             r#"{"error": {"message": "server error"}}"#,
         );
         match &err {
-            AttractorError::ProviderError { retryable, status, .. } => {
+            AttractorError::ProviderError {
+                retryable, status, ..
+            } => {
                 assert!(*retryable);
                 assert_eq!(*status, 500);
             }

@@ -1,12 +1,12 @@
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use attractor_web::App;
     use axum::{routing::get, Router};
     use leptos::config::get_configuration;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use attractor_web::App;
-    use std::sync::{Arc, Mutex};
     use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
 
     tracing_subscriber::fmt::init();
 
@@ -64,18 +64,20 @@ async fn main() {
         .with_state(leptos_options);
 
     tracing::info!("listening on http://{}", &addr);
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap_or_else(|e| {
-        panic!("Failed to bind to {addr}: {e}. Is another instance already running?");
-    });
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .unwrap_or_else(|e| {
+            panic!("Failed to bind to {addr}: {e}. Is another instance already running?");
+        });
     let app = app.into_make_service();
     axum::serve(listener, app).await.unwrap();
 }
 
 #[cfg(feature = "ssr")]
 fn shell(options: leptos::config::LeptosOptions) -> impl leptos::IntoView {
+    use attractor_web::App;
     use leptos::prelude::*;
     use leptos_meta::*;
-    use attractor_web::App;
 
     view! {
         <!DOCTYPE html>

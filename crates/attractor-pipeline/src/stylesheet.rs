@@ -162,7 +162,10 @@ impl<'a> Parser<'a> {
         // Compute line/col from pos
         let consumed = &self.input[..self.pos];
         let line = consumed.chars().filter(|&c| c == '\n').count() + 1;
-        let col = consumed.rfind('\n').map(|i| self.pos - i).unwrap_or(self.pos + 1);
+        let col = consumed
+            .rfind('\n')
+            .map(|i| self.pos - i)
+            .unwrap_or(self.pos + 1);
         AttractorError::ParseError {
             line,
             col,
@@ -318,7 +321,10 @@ mod tests {
         assert_eq!(ss.rules[0].selector, Selector::Universal);
         assert_eq!(ss.rules[0].declarations.len(), 1);
         assert_eq!(ss.rules[0].declarations[0].property, "llm_model");
-        assert_eq!(ss.rules[0].declarations[0].value, "claude-sonnet-4-20250514");
+        assert_eq!(
+            ss.rules[0].declarations[0].value,
+            "claude-sonnet-4-20250514"
+        );
     }
 
     #[test]

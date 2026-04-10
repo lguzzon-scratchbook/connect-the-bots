@@ -389,12 +389,15 @@ impl ProviderAdapter for AnthropicAdapter {
             })?;
 
         let status = resp.status();
-        let response_body = resp.text().await.map_err(|e| AttractorError::ProviderError {
-            provider: "anthropic".into(),
-            status: 0,
-            message: e.to_string(),
-            retryable: true,
-        })?;
+        let response_body = resp
+            .text()
+            .await
+            .map_err(|e| AttractorError::ProviderError {
+                provider: "anthropic".into(),
+                status: 0,
+                message: e.to_string(),
+                retryable: true,
+            })?;
 
         if !status.is_success() {
             return Err(map_error(status, &response_body));
@@ -411,10 +414,7 @@ impl ProviderAdapter for AnthropicAdapter {
         parse_response(&json)
     }
 
-    fn stream(
-        &self,
-        _request: &Request,
-    ) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
+    fn stream(&self, _request: &Request) -> Pin<Box<dyn Stream<Item = StreamEvent> + Send + '_>> {
         Box::pin(tokio_stream::empty::<StreamEvent>())
     }
 
@@ -455,10 +455,7 @@ mod tests {
     fn make_basic_request() -> Request {
         Request {
             model: "claude-sonnet-4-5-20250929".into(),
-            messages: vec![
-                Message::system("You are helpful."),
-                Message::user("Hello"),
-            ],
+            messages: vec![Message::system("You are helpful."), Message::user("Hello")],
             tools: vec![],
             tool_choice: None,
             max_tokens: Some(1024),
@@ -476,7 +473,9 @@ mod tests {
         let body = build_request_body(&req);
 
         // System should be a top-level array
-        let system = body["system"].as_array().expect("system should be an array");
+        let system = body["system"]
+            .as_array()
+            .expect("system should be an array");
         assert_eq!(system.len(), 1);
         assert_eq!(system[0]["type"], "text");
         assert_eq!(system[0]["text"], "You are helpful.");
@@ -610,7 +609,13 @@ mod tests {
             reqwest::StatusCode::TOO_MANY_REQUESTS,
             r#"{"error": {"message": "rate limited", "retry_after": 2.5}}"#,
         );
-        assert!(matches!(err, AttractorError::RateLimited { retry_after_ms: 2500, .. }));
+        assert!(matches!(
+            err,
+            AttractorError::RateLimited {
+                retry_after_ms: 2500,
+                ..
+            }
+        ));
     }
 
     #[test]
@@ -629,7 +634,9 @@ mod tests {
             r#"{"error": {"message": "bad request"}}"#,
         );
         match &err {
-            AttractorError::ProviderError { retryable, status, .. } => {
+            AttractorError::ProviderError {
+                retryable, status, ..
+            } => {
                 assert!(!retryable);
                 assert_eq!(*status, 400);
             }
@@ -644,7 +651,9 @@ mod tests {
             r#"{"error": {"message": "server error"}}"#,
         );
         match &err {
-            AttractorError::ProviderError { retryable, status, .. } => {
+            AttractorError::ProviderError {
+                retryable, status, ..
+            } => {
                 assert!(*retryable);
                 assert_eq!(*status, 500);
             }

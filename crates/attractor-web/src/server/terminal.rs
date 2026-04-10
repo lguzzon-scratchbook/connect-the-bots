@@ -179,13 +179,17 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
             );
 
             // Determine the working directory
-            let fallback_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
+            let fallback_dir =
+                std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
             let cwd = if let Some(ref folder_path) = query.folder {
                 let path = std::path::Path::new(folder_path);
                 if path.exists() && path.is_dir() {
                     path
                 } else {
-                    tracing::warn!("Invalid folder path: {}, falling back to current_dir", folder_path);
+                    tracing::warn!(
+                        "Invalid folder path: {}, falling back to current_dir",
+                        folder_path
+                    );
                     fallback_dir.as_path()
                 }
             } else {
@@ -208,13 +212,17 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
     } else {
         // Brand new session
         // Determine the working directory
-        let fallback_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
+        let fallback_dir =
+            std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("/"));
         let cwd = if let Some(ref folder_path) = query.folder {
             let path = std::path::Path::new(folder_path);
             if path.exists() && path.is_dir() {
                 path
             } else {
-                tracing::warn!("Invalid folder path: {}, falling back to current_dir", folder_path);
+                tracing::warn!(
+                    "Invalid folder path: {}, falling back to current_dir",
+                    folder_path
+                );
                 fallback_dir.as_path()
             }
         } else {
@@ -256,15 +264,14 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
     let send_task = tokio::spawn(async move {
         loop {
             let reader_ref = reader_clone.clone();
-            let result: Result<Vec<u8>, std::io::Error> =
-                tokio::task::spawn_blocking(move || {
-                    let mut r = reader_ref.lock().unwrap();
-                    let mut buf = [0u8; 4096];
-                    let n = r.read(&mut buf)?;
-                    Ok(buf[..n].to_vec())
-                })
-                .await
-                .unwrap_or_else(|_| Err(std::io::Error::other("join error")));
+            let result: Result<Vec<u8>, std::io::Error> = tokio::task::spawn_blocking(move || {
+                let mut r = reader_ref.lock().unwrap();
+                let mut buf = [0u8; 4096];
+                let n = r.read(&mut buf)?;
+                Ok(buf[..n].to_vec())
+            })
+            .await
+            .unwrap_or_else(|_| Err(std::io::Error::other("join error")));
 
             match result {
                 Ok(data) if !data.is_empty() => {
@@ -318,5 +325,8 @@ async fn handle_terminal_socket(ws: WebSocket, query: WsQuery, state: super::App
 
     // Mark session as disconnected (but don't destroy it)
     *session.disconnected_at.lock().unwrap() = Some(Instant::now());
-    tracing::info!("WebSocket disconnected from session {}, PTY kept alive", session_id);
+    tracing::info!(
+        "WebSocket disconnected from session {}, PTY kept alive",
+        session_id
+    );
 }

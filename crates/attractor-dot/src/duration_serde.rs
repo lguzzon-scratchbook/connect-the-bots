@@ -19,19 +19,29 @@ where
 
 pub fn parse_duration_str(s: &str) -> Result<Duration, String> {
     if let Some(val) = s.strip_suffix("ms") {
-        let n: u64 = val.parse().map_err(|e| format!("invalid duration: {}", e))?;
+        let n: u64 = val
+            .parse()
+            .map_err(|e| format!("invalid duration: {}", e))?;
         Ok(Duration::from_millis(n))
     } else if let Some(val) = s.strip_suffix('s') {
-        let n: u64 = val.parse().map_err(|e| format!("invalid duration: {}", e))?;
+        let n: u64 = val
+            .parse()
+            .map_err(|e| format!("invalid duration: {}", e))?;
         Ok(Duration::from_secs(n))
     } else if let Some(val) = s.strip_suffix('m') {
-        let n: u64 = val.parse().map_err(|e| format!("invalid duration: {}", e))?;
+        let n: u64 = val
+            .parse()
+            .map_err(|e| format!("invalid duration: {}", e))?;
         Ok(Duration::from_secs(n * 60))
     } else if let Some(val) = s.strip_suffix('h') {
-        let n: u64 = val.parse().map_err(|e| format!("invalid duration: {}", e))?;
+        let n: u64 = val
+            .parse()
+            .map_err(|e| format!("invalid duration: {}", e))?;
         Ok(Duration::from_secs(n * 3600))
     } else if let Some(val) = s.strip_suffix('d') {
-        let n: u64 = val.parse().map_err(|e| format!("invalid duration: {}", e))?;
+        let n: u64 = val
+            .parse()
+            .map_err(|e| format!("invalid duration: {}", e))?;
         Ok(Duration::from_secs(n * 86400))
     } else {
         Err(format!("unknown duration format: {}", s))

@@ -36,10 +36,7 @@ impl NodeHandler for WaitHumanHandler {
         let edges = graph.outgoing_edges(&node.id);
         let choices: Vec<String> = edges.iter().filter_map(|e| e.label.clone()).collect();
 
-        let prompt = node
-            .prompt
-            .clone()
-            .unwrap_or_else(|| node.label.clone());
+        let prompt = node.prompt.clone().unwrap_or_else(|| node.label.clone());
 
         let question = Question {
             prompt,

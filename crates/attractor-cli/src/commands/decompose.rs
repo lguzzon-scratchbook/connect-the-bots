@@ -130,8 +130,13 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
     // Strip markdown code fences if present (handles ```json, ```, etc.)
     let cleaned = strip_code_fences(result_str);
 
-    let decompose: DecomposeOutput = serde_json::from_str(&cleaned)
-        .map_err(|e| anyhow::anyhow!("Failed to parse Claude's JSON output: {}\n\nRaw output:\n{}", e, cleaned))?;
+    let decompose: DecomposeOutput = serde_json::from_str(&cleaned).map_err(|e| {
+        anyhow::anyhow!(
+            "Failed to parse Claude's JSON output: {}\n\nRaw output:\n{}",
+            e,
+            cleaned
+        )
+    })?;
 
     if dry_run {
         println!("Decomposition (dry run):\n");
@@ -139,8 +144,14 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
         println!("  Description: {}", decompose.epic.description);
         println!("\nTasks ({}):", decompose.tasks.len());
         for (i, task) in decompose.tasks.iter().enumerate() {
-            println!("  [{}] {} (type={}, priority={})", i, task.title, task.r#type, task.priority);
-            println!("      Description: {}", truncate_for_display(&task.description, 120));
+            println!(
+                "  [{}] {} (type={}, priority={})",
+                i, task.title, task.r#type, task.priority
+            );
+            println!(
+                "      Description: {}",
+                truncate_for_display(&task.description, 120)
+            );
             if let Some(ref a) = task.acceptance {
                 println!("      Acceptance: {}", truncate_for_display(a, 120));
             }
@@ -161,8 +172,16 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
 
     // Create the epic
     let epic_output = tokio::process::Command::new("bd")
-        .args(["create", "--title", &decompose.epic.title, "--type", "epic",
-               "--description", &decompose.epic.description, "--silent"])
+        .args([
+            "create",
+            "--title",
+            &decompose.epic.title,
+            "--type",
+            "epic",
+            "--description",
+            &decompose.epic.description,
+            "--silent",
+        ])
         .output()
         .await?;
 
@@ -179,10 +198,14 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
     for task in &decompose.tasks {
         let mut args = vec![
             "create".to_string(),
-            "--title".to_string(), task.title.clone(),
-            "--type".to_string(), task.r#type.clone(),
-            "--priority".to_string(), task.priority.clone(),
-            "--description".to_string(), task.description.clone(),
+            "--title".to_string(),
+            task.title.clone(),
+            "--type".to_string(),
+            task.r#type.clone(),
+            "--priority".to_string(),
+            task.priority.clone(),
+            "--description".to_string(),
+            task.description.clone(),
         ];
 
         if let Some(ref acceptance) = task.acceptance {
@@ -222,7 +245,10 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
 
         if !dep_output.status.success() {
             let stderr = String::from_utf8_lossy(&dep_output.stderr);
-            eprintln!("Warning: failed to add epic dependency for {}: {}", task_id, stderr);
+            eprintln!(
+                "Warning: failed to add epic dependency for {}: {}",
+                task_id, stderr
+            );
         }
     }
 
@@ -237,14 +263,20 @@ pub async fn cmd_decompose(spec_path: &std::path::Path, dry_run: bool) -> anyhow
 
             if !dep_output.status.success() {
                 let stderr = String::from_utf8_lossy(&dep_output.stderr);
-                eprintln!("Warning: failed to add dependency [{} -> {}]: {}",
-                    task_ids[dep.blocked], task_ids[dep.blocker], stderr);
+                eprintln!(
+                    "Warning: failed to add dependency [{} -> {}]: {}",
+                    task_ids[dep.blocked], task_ids[dep.blocker], stderr
+                );
             } else {
                 dep_count += 1;
             }
         } else {
-            eprintln!("Warning: dependency index out of range (blocked={}, blocker={}, tasks={})",
-                dep.blocked, dep.blocker, task_ids.len());
+            eprintln!(
+                "Warning: dependency index out of range (blocked={}, blocker={}, tasks={})",
+                dep.blocked,
+                dep.blocker,
+                task_ids.len()
+            );
         }
     }
 
@@ -304,34 +336,113 @@ pub async fn validate_decomposition(
 
     // Common stdlib/language types whose ::method calls are noise, not spec identifiers
     let stdlib_prefixes: HashSet<&str> = [
-        "Arc", "Box", "Cell", "Cow", "HashMap", "HashSet", "Mutex", "Option",
-        "PathBuf", "Rc", "RefCell", "Result", "RwLock", "String", "Vec",
-        "AtomicBool", "AtomicU32", "AtomicU64", "AtomicUsize", "Ordering",
-        "BufReader", "BufWriter", "Duration", "Instant", "SystemTime",
-        "Command", "Path", "File", "Sender", "Receiver",
-        "JoinHandle", "TcpStream", "TcpListener",
-        "Bytes", "BytesMut", "Pin", "Waker",
-        "Some", "None", "Ok", "Err", "Default", "Display", "Debug",
-        "From", "Into", "TryFrom", "TryInto", "Iterator", "IntoIterator",
-        "Read", "Write", "Seek", "BufRead", "AsRef", "Deref",
-        "Serialize", "Deserialize", "Clone", "Copy", "Send", "Sync",
-        "PhantomData", "ManuallyDrop", "MaybeUninit",
+        "Arc",
+        "Box",
+        "Cell",
+        "Cow",
+        "HashMap",
+        "HashSet",
+        "Mutex",
+        "Option",
+        "PathBuf",
+        "Rc",
+        "RefCell",
+        "Result",
+        "RwLock",
+        "String",
+        "Vec",
+        "AtomicBool",
+        "AtomicU32",
+        "AtomicU64",
+        "AtomicUsize",
+        "Ordering",
+        "BufReader",
+        "BufWriter",
+        "Duration",
+        "Instant",
+        "SystemTime",
+        "Command",
+        "Path",
+        "File",
+        "Sender",
+        "Receiver",
+        "JoinHandle",
+        "TcpStream",
+        "TcpListener",
+        "Bytes",
+        "BytesMut",
+        "Pin",
+        "Waker",
+        "Some",
+        "None",
+        "Ok",
+        "Err",
+        "Default",
+        "Display",
+        "Debug",
+        "From",
+        "Into",
+        "TryFrom",
+        "TryInto",
+        "Iterator",
+        "IntoIterator",
+        "Read",
+        "Write",
+        "Seek",
+        "BufRead",
+        "AsRef",
+        "Deref",
+        "Serialize",
+        "Deserialize",
+        "Clone",
+        "Copy",
+        "Send",
+        "Sync",
+        "PhantomData",
+        "ManuallyDrop",
+        "MaybeUninit",
         // std::io and error types
-        "Error", "ErrorKind", "IoError",
+        "Error",
+        "ErrorKind",
+        "IoError",
         // tokio types
-        "Mutex", "RwLock", "Notify", "Semaphore", "Barrier",
-        "OwnedSemaphorePermit", "JoinSet", "JoinError",
+        "Mutex",
+        "RwLock",
+        "Notify",
+        "Semaphore",
+        "Barrier",
+        "OwnedSemaphorePermit",
+        "JoinSet",
+        "JoinError",
         // serde/common crate types
-        "Value", "Map", "Number", "Formatter",
+        "Value",
+        "Map",
+        "Number",
+        "Formatter",
         // test assertion types
-        "Assert", "Assertion",
-    ].into_iter().collect();
+        "Assert",
+        "Assertion",
+    ]
+    .into_iter()
+    .collect();
 
     // Generic trait method suffixes that aren't meaningful on any type
-    let noise_suffixes = ["::clone", "::into",
-        "::unwrap", "::expect", "::is_ok", "::is_err", "::is_some", "::is_none",
-        "::as_ref", "::as_str", "::as_bytes", "::as_slice",
-        "::to_string", "::to_owned", "::to_vec",
+    let noise_suffixes = [
+        "::clone",
+        "::into",
+        "::unwrap",
+        "::expect",
+        "::is_ok",
+        "::is_err",
+        "::is_some",
+        "::is_none",
+        "::as_ref",
+        "::as_str",
+        "::as_bytes",
+        "::as_slice",
+        "::to_string",
+        "::to_owned",
+        "::to_vec",
     ];
 
     let mut identifiers = HashSet::new();
@@ -366,7 +477,10 @@ pub async fn validate_decomposition(
         None => {
             println!("\nSpec validation (dry run):");
             if total > 0 {
-                println!("  Extracted {} identifiers to track coverage against tickets", total);
+                println!(
+                    "  Extracted {} identifiers to track coverage against tickets",
+                    total
+                );
                 let mut sorted: Vec<&str> = identifiers.iter().map(|s| s.as_str()).collect();
                 sorted.sort();
                 let display: Vec<&str> = sorted.iter().take(20).copied().collect();
@@ -421,11 +535,7 @@ pub async fn validate_decomposition(
         let title = ticket["title"].as_str().unwrap_or("?");
         let missing: Vec<&str> = check_fields
             .iter()
-            .filter(|&&field| {
-                ticket[field]
-                    .as_str()
-                    .map_or(true, |v| v.trim().is_empty())
-            })
+            .filter(|&&field| ticket[field].as_str().map_or(true, |v| v.trim().is_empty()))
             .copied()
             .collect();
 
@@ -455,7 +565,10 @@ pub async fn validate_decomposition(
     let mut covered = 0usize;
 
     for ident in &identifiers {
-        if ticket_texts.iter().any(|text| text.contains(ident.as_str())) {
+        if ticket_texts
+            .iter()
+            .any(|text| text.contains(ident.as_str()))
+        {
             covered += 1;
         } else {
             missing_ids.push(ident);

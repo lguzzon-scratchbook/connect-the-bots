@@ -5,10 +5,17 @@ mod commands;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use commands::{cmd_decompose, cmd_generate, cmd_generate_dir, cmd_info, cmd_launch, cmd_plan, cmd_run, cmd_run_dir, cmd_scaffold, cmd_validate, validate_decomposition};
+use commands::{
+    cmd_decompose, cmd_generate, cmd_generate_dir, cmd_info, cmd_launch, cmd_plan, cmd_run,
+    cmd_run_dir, cmd_scaffold, cmd_validate, validate_decomposition,
+};
 
 #[derive(Parser)]
-#[command(name = "pas", version, about = "Pascal's Discrete Attractor — DOT-based pipeline runner for AI workflows")]
+#[command(
+    name = "pas",
+    version,
+    about = "Pascal's Discrete Attractor — DOT-based pipeline runner for AI workflows"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -195,9 +202,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Setup tracing
     let filter = if cli.verbose { "debug" } else { "info" };
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .init();
+    tracing_subscriber::fmt().with_env_filter(filter).init();
 
     match cli.command {
         Commands::Run {
@@ -210,9 +215,26 @@ async fn main() -> anyhow::Result<()> {
             fresh,
         } => {
             if pipeline.is_dir() {
-                cmd_run_dir(&pipeline, workdir.as_deref(), dry_run, max_budget_usd, max_steps, fresh).await?;
+                cmd_run_dir(
+                    &pipeline,
+                    workdir.as_deref(),
+                    dry_run,
+                    max_budget_usd,
+                    max_steps,
+                    fresh,
+                )
+                .await?;
             } else {
-                cmd_run(&pipeline, workdir.as_deref(), logs.as_deref(), dry_run, max_budget_usd, max_steps, fresh).await?;
+                cmd_run(
+                    &pipeline,
+                    workdir.as_deref(),
+                    logs.as_deref(),
+                    dry_run,
+                    max_budget_usd,
+                    max_steps,
+                    fresh,
+                )
+                .await?;
             }
         }
         Commands::Validate { pipeline } => {
@@ -221,10 +243,19 @@ async fn main() -> anyhow::Result<()> {
         Commands::Info { pipeline } => {
             cmd_info(&pipeline)?;
         }
-        Commands::Plan { prd, spec, from_prompt, output } => {
+        Commands::Plan {
+            prd,
+            spec,
+            from_prompt,
+            output,
+        } => {
             cmd_plan(prd, spec, from_prompt.as_deref(), output.as_deref()).await?;
         }
-        Commands::Decompose { spec_path, dry_run, validate } => {
+        Commands::Decompose {
+            spec_path,
+            dry_run,
+            validate,
+        } => {
             if let Some(epic_id) = validate {
                 let spec_content = std::fs::read_to_string(&spec_path)?;
                 validate_decomposition(&spec_content, Some(&epic_id)).await?;
@@ -235,7 +266,12 @@ async fn main() -> anyhow::Result<()> {
         Commands::Scaffold { epic_id, output } => {
             cmd_scaffold(&epic_id, output.as_deref()).await?;
         }
-        Commands::Generate { files, prd, spec, output } => {
+        Commands::Generate {
+            files,
+            prd,
+            spec,
+            output,
+        } => {
             // Check if the single positional arg is a directory
             if files.len() == 1 && files[0].is_dir() && prd.is_none() && spec.is_none() {
                 cmd_generate_dir(&files[0], output.as_deref(), cli.verbose).await?;
@@ -248,7 +284,9 @@ async fn main() -> anyhow::Result<()> {
                     (None, None, 1) => (None, files[0].clone()),
                     (None, None, 2) => (Some(files[0].clone()), files[1].clone()),
                     (Some(_), None, 0) => {
-                        anyhow::bail!("Spec file is required. Usage: pas generate [--prd PRD] <SPEC>");
+                        anyhow::bail!(
+                            "Spec file is required. Usage: pas generate [--prd PRD] <SPEC>"
+                        );
                     }
                     (None, None, 0) => {
                         anyhow::bail!("Spec file is required. Usage: pas generate [PRD] <SPEC>");
@@ -263,7 +301,13 @@ async fn main() -> anyhow::Result<()> {
                         );
                     }
                 };
-                cmd_generate(resolved_prd.as_deref(), &resolved_spec, output.as_deref(), cli.verbose).await?;
+                cmd_generate(
+                    resolved_prd.as_deref(),
+                    &resolved_spec,
+                    output.as_deref(),
+                    cli.verbose,
+                )
+                .await?;
             }
         }
         Commands::Launch {
@@ -292,7 +336,9 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub(crate) fn load_pipeline(path: &std::path::Path) -> anyhow::Result<attractor_pipeline::PipelineGraph> {
+pub(crate) fn load_pipeline(
+    path: &std::path::Path,
+) -> anyhow::Result<attractor_pipeline::PipelineGraph> {
     let source = std::fs::read_to_string(path)?;
     let dot = attractor_dot::parse(&source)?;
     let graph = attractor_pipeline::PipelineGraph::from_dot(dot)?;

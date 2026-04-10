@@ -69,6 +69,10 @@ impl Tool for GrepTool {
         };
 
         let output = env.grep(pattern, path, &options).await?;
-        Ok(truncate_output(&output, MAX_OUTPUT_CHARS, TruncationMode::Tail))
+        Ok(truncate_output(
+            &output,
+            MAX_OUTPUT_CHARS,
+            TruncationMode::Tail,
+        ))
     }
 }

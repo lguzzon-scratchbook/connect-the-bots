@@ -3,10 +3,10 @@
 //! Watches for changes to `prd.md` and `spec.md` and pushes updates
 //! via SSE to the document viewer.
 
+use axum::extract::Query;
 use axum::response::sse::{Event, KeepAlive, Sse};
-use axum::extract::{Query};
 use futures::stream::BoxStream;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -107,7 +107,11 @@ impl DocumentWatcher {
         std::fs::create_dir_all(&watch_dir).ok();
 
         watcher.watch(&watch_dir, RecursiveMode::NonRecursive)?;
-        tracing::info!("Watching {:?} for document changes (project_id: {})", watch_dir, project_id);
+        tracing::info!(
+            "Watching {:?} for document changes (project_id: {})",
+            watch_dir,
+            project_id
+        );
 
         Ok(DocumentWatcher {
             sender,
@@ -156,7 +160,10 @@ pub async fn document_stream(
     Query(params): Query<DocStreamParams>,
     axum::extract::State(state): axum::extract::State<crate::server::AppState>,
 ) -> Sse<BoxStream<'static, Result<Event, Infallible>>> {
-    tracing::info!("Document SSE connection established for project_id: {}", params.project_id);
+    tracing::info!(
+        "Document SSE connection established for project_id: {}",
+        params.project_id
+    );
 
     // Look up the project to get its folder path
     let project = match crate::server::db::get_project(&state.db, params.project_id).await {
@@ -185,7 +192,8 @@ pub async fn document_stream(
     let rx = watcher.subscribe();
 
     // Load initial documents from database
-    let initial_events = match crate::server::db::get_documents(&state.db, params.project_id).await {
+    let initial_events = match crate::server::db::get_documents(&state.db, params.project_id).await
+    {
         Ok(docs) => docs
             .into_iter()
             .map(|doc| DocumentUpdate {

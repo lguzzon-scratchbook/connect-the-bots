@@ -15,7 +15,8 @@ where
 {
     let (phase, set_phase) = signal(Option::<ExecutionPhase>::None);
 
-    let execute_action = Action::new(move |_: &()| async move { start_execution(project_id).await });
+    let execute_action =
+        Action::new(move |_: &()| async move { start_execution(project_id).await });
 
     // Watch for action completion
     Effect::new(move || {

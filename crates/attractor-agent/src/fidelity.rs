@@ -23,7 +23,8 @@ impl FidelityMode {
             "summary" => FidelityMode::Summary,
             s if s.starts_with("truncate") => {
                 // Parse "truncate:N" or "truncate(N)"
-                let n = s.trim_start_matches("truncate")
+                let n = s
+                    .trim_start_matches("truncate")
                     .trim_start_matches(|c: char| c == ':' || c == '(' || c.is_whitespace())
                     .trim_end_matches(')')
                     .parse::<usize>()

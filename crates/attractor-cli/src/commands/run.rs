@@ -17,8 +17,8 @@ fn stable_logs_dir(pipeline_path: &std::path::Path) -> PathBuf {
         .to_string_lossy();
 
     // Hash the canonical path for deterministic directory across runs
-    let canonical = std::fs::canonicalize(pipeline_path)
-        .unwrap_or_else(|_| pipeline_path.to_path_buf());
+    let canonical =
+        std::fs::canonicalize(pipeline_path).unwrap_or_else(|_| pipeline_path.to_path_buf());
     let mut hasher = DefaultHasher::new();
     canonical.hash(&mut hasher);
     let hash = hasher.finish();
@@ -76,9 +76,7 @@ pub async fn cmd_run(
         println!("Working directory: {}", abs.display());
     }
     if dry_run {
-        context
-            .set("dry_run", serde_json::Value::Bool(true))
-            .await;
+        context.set("dry_run", serde_json::Value::Bool(true)).await;
     }
 
     // Safety limits
@@ -88,16 +86,15 @@ pub async fn cmd_run(
             .await;
         println!("Budget limit: ${:.2}", budget);
     }
-    context
-        .set("max_steps", serde_json::json!(max_steps))
-        .await;
+    context.set("max_steps", serde_json::json!(max_steps)).await;
     println!("Step limit: {}", max_steps);
 
     let interviewer = std::sync::Arc::new(attractor_pipeline::ConsoleInterviewer);
-    let registry =
-        attractor_pipeline::default_registry_with_interviewer(interviewer);
+    let registry = attractor_pipeline::default_registry_with_interviewer(interviewer);
     let executor = attractor_pipeline::PipelineExecutor::new(registry);
-    let result = executor.run_with_checkpoint(&graph, context, &logs_dir).await?;
+    let result = executor
+        .run_with_checkpoint(&graph, context, &logs_dir)
+        .await?;
 
     println!("\nPipeline completed");
     println!("Completed nodes: {:?}", result.completed_nodes);
@@ -158,9 +155,16 @@ pub async fn cmd_run_dir(
 
     let mut manifest = load_manifest(&manifest_path)?;
 
-    println!("Running {} pipeline(s) from {} (lexical order)", dot_files.len(), dir.display());
+    println!(
+        "Running {} pipeline(s) from {} (lexical order)",
+        dot_files.len(),
+        dir.display()
+    );
     for dot_file in &dot_files {
-        println!("  {}", dot_file.file_name().unwrap_or_default().to_string_lossy());
+        println!(
+            "  {}",
+            dot_file.file_name().unwrap_or_default().to_string_lossy()
+        );
     }
     for (i, dot_file) in dot_files.iter().enumerate() {
         let name = dot_file
@@ -171,7 +175,12 @@ pub async fn cmd_run_dir(
 
         // Skip already-completed pipelines
         if manifest.completed.contains(&name) {
-            println!("[{}/{}] {} — already completed, skipping", i + 1, dot_files.len(), name);
+            println!(
+                "[{}/{}] {} — already completed, skipping",
+                i + 1,
+                dot_files.len(),
+                name
+            );
             continue;
         }
 
@@ -218,16 +227,12 @@ fn stable_manifest_dir(dir: &std::path::Path) -> PathBuf {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
 
-    let canonical = std::fs::canonicalize(dir)
-        .unwrap_or_else(|_| dir.to_path_buf());
+    let canonical = std::fs::canonicalize(dir).unwrap_or_else(|_| dir.to_path_buf());
     let mut hasher = DefaultHasher::new();
     canonical.hash(&mut hasher);
     let hash = hasher.finish();
 
-    let stem = dir
-        .file_name()
-        .unwrap_or_default()
-        .to_string_lossy();
+    let stem = dir.file_name().unwrap_or_default().to_string_lossy();
 
     PathBuf::from(format!(".pas/logs/{}-batch-{:08x}", stem, hash as u32))
 }

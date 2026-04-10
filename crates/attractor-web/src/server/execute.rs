@@ -38,7 +38,9 @@ fn pas_cli_path() -> String {
 /// # Arguments
 /// - `project_id`: Database ID of the project to execute against
 #[server]
-pub async fn start_execution(project_id: i64) -> Result<ExecutionResponse, ServerFnError<NoCustomError>> {
+pub async fn start_execution(
+    project_id: i64,
+) -> Result<ExecutionResponse, ServerFnError<NoCustomError>> {
     use tokio::process::Command;
     use uuid::Uuid;
 
@@ -48,9 +50,9 @@ pub async fn start_execution(project_id: i64) -> Result<ExecutionResponse, Serve
 
     let project = crate::server::db::get_project(&pool, project_id)
         .await
-        .map_err(|e| ServerFnError::<NoCustomError>::ServerError(
-            format!("Failed to get project: {}", e)
-        ))?;
+        .map_err(|e| {
+            ServerFnError::<NoCustomError>::ServerError(format!("Failed to get project: {}", e))
+        })?;
 
     let cli = pas_cli_path();
     let session_id = Uuid::new_v4().to_string();
@@ -59,9 +61,10 @@ pub async fn start_execution(project_id: i64) -> Result<ExecutionResponse, Serve
 
     // Verify spec file exists
     if !std::path::Path::new(&spec_path).exists() {
-        return Err(ServerFnError::<NoCustomError>::ServerError(
-            format!("Spec file not found at {}", spec_path),
-        ));
+        return Err(ServerFnError::<NoCustomError>::ServerError(format!(
+            "Spec file not found at {}",
+            spec_path
+        )));
     }
 
     // 1. Decompose: spec → beads epic + tasks
@@ -125,10 +128,7 @@ pub async fn start_execution(project_id: i64) -> Result<ExecutionResponse, Serve
 
     // 3. Load pipeline and start execution with SSE streaming
     let dot_source = std::fs::read_to_string(&full_pipeline_path).map_err(|e| {
-        ServerFnError::<NoCustomError>::ServerError(format!(
-            "Failed to read pipeline file: {}",
-            e
-        ))
+        ServerFnError::<NoCustomError>::ServerError(format!("Failed to read pipeline file: {}", e))
     })?;
 
     let parsed = attractor_dot::parse(&dot_source).map_err(|e| {
@@ -212,13 +212,13 @@ async fn run_pipeline_with_streaming(
 
         // Execute node
         let handler_type = registry.resolve_type(current_node);
-        let handler = registry.get(&handler_type).ok_or_else(|| {
-            AttractorError::HandlerError {
+        let handler = registry
+            .get(&handler_type)
+            .ok_or_else(|| AttractorError::HandlerError {
                 handler: handler_type.clone(),
                 node: current_node.id.clone(),
                 message: format!("No handler for '{}'", handler_type),
-            }
-        })?;
+            })?;
 
         let outcome = handler.execute(current_node, &context, graph).await?;
 
@@ -249,9 +249,7 @@ async fn run_pipeline_with_streaming(
         node_outcomes.insert(current_node.id.clone(), outcome.clone());
 
         // Apply context updates
-        context
-            .apply_updates(outcome.context_updates.clone())
-            .await;
+        context.apply_updates(outcome.context_updates.clone()).await;
         context
             .set(
                 "outcome",
@@ -260,10 +258,7 @@ async fn run_pipeline_with_streaming(
             .await;
         if let Some(ref label) = outcome.preferred_label {
             context
-                .set(
-                    "preferred_label",
-                    serde_json::Value::String(label.clone()),
-                )
+                .set("preferred_label", serde_json::Value::String(label.clone()))
                 .await;
         }
 
