@@ -1,0 +1,28 @@
+[build]
+# Use all CPU cores for compilation (auto-detect when unset)
+
+# Enable pipelining for faster crate compilation
+pipelining = true
+
+# Link-time optimization happens in release profile,
+# but we can speed up dev builds
+target-dir = "target"
+
+[profile.dev]
+# Faster dev builds with less codegen
+codegen-units = 256
+incremental = true
+
+[profile.release]
+# Parallel front-end for faster release builds (Rust 1.78+)
+# Only use if on recent Rust - comment out if build fails
+# rustflags = ["-Z", "threads=8"]
+
+# Thin LTO is faster than fat LTO but still optimizes
+lto = "thin"
+
+# More codegen units = faster compile, slightly bigger binary
+codegen-units = 16
+
+[registries.crates-io]
+protocol = "sparse"
