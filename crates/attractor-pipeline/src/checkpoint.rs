@@ -75,11 +75,13 @@ pub async fn save_checkpoint(
     logs_root: &Path,
 ) -> attractor_types::Result<PathBuf> {
     tokio::fs::create_dir_all(logs_root).await?;
-    let path = logs_root.join("checkpoint.json");
+    let temp_path = logs_root.join("checkpoint.json.tmp");
+    let final_path = logs_root.join("checkpoint.json");
     let json = serde_json::to_string_pretty(checkpoint)?;
-    tokio::fs::write(&path, json).await?;
-    tracing::debug!(path = %path.display(), "Checkpoint saved");
-    Ok(path)
+    tokio::fs::write(&temp_path, json).await?;
+    tokio::fs::rename(&temp_path, &final_path).await?;
+    tracing::debug!(path = %final_path.display(), "Checkpoint saved");
+    Ok(final_path)
 }
 
 /// Load the latest checkpoint from a directory.
