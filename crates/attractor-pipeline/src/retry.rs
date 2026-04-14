@@ -53,33 +53,37 @@ where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = attractor_types::Result<attractor_types::Outcome>>,
 {
-    let mut last_err = None;
+    let mut last_err: Option<attractor_types::AttractorError> = None;
+    let mut attempt_count = 0;
+
     for attempt in 0..=max_retries {
+        attempt_count = attempt + 1;
         match f().await {
             Ok(outcome) => {
                 if outcome.status == attractor_types::StageStatus::Retry && attempt < max_retries {
                     let delay = policy.delay_for_attempt(attempt);
-                    tracing::info!(node = %node_id, attempt, delay_ms = %delay.as_millis(), "Retrying");
+                    tracing::info!(node = %node_id, attempt = attempt + 1, delay_ms = %delay.as_millis(), "Retrying");
                     tokio::time::sleep(delay).await;
                     continue;
                 }
+                // Return outcome (even with Retry status on final attempt, per original behavior)
                 return Ok(outcome);
             }
             Err(e) if e.is_retryable() && attempt < max_retries => {
                 last_err = Some(e);
                 let delay = policy.delay_for_attempt(attempt);
-                tracing::warn!(node = %node_id, attempt, delay_ms = %delay.as_millis(), "Retryable error, retrying");
+                tracing::warn!(node = %node_id, attempt = attempt + 1, delay_ms = %delay.as_millis(), "Retryable error, retrying");
                 tokio::time::sleep(delay).await;
             }
             Err(e) => return Err(e),
         }
     }
-    Err(
-        last_err.unwrap_or_else(|| attractor_types::AttractorError::RetriesExhausted {
-            node: node_id.to_string(),
-            attempts: max_retries + 1,
-        }),
-    )
+
+    // Retries exhausted — return last error or exhaustion error
+    Err(last_err.unwrap_or_else(|| attractor_types::AttractorError::RetriesExhausted {
+        node: node_id.to_string(),
+        attempts: attempt_count,
+    }))
 }
 
 #[cfg(test)]

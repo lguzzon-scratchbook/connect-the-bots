@@ -234,6 +234,9 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
     }
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
+    // Create a new process group so we can kill all children on timeout
+    #[cfg(unix)]
+    cmd.process_group(0);
     cmd
 }
 
@@ -546,11 +549,24 @@ impl NodeHandler for CodergenHandler {
                         "Killing timed-out {} process",
                         provider.display_name()
                     );
-                    // SIGKILL the child process — its MCP server children will
-                    // get SIGHUP when their parent exits.
+                    // Kill the entire process group to ensure MCP servers
+                    // and other children are terminated.
                     #[cfg(unix)]
                     unsafe {
-                        libc::kill(pid as i32, libc::SIGKILL);
+                        // Kill the process group (pid is negative for killpg)
+                        let pgid = libc::getpgid(pid as i32);
+                        if pgid > 0 {
+                            libc::killpg(pgid, libc::SIGKILL);
+                        } else {
+                            // Fallback: kill just the direct child
+                            libc::kill(pid as i32, libc::SIGKILL);
+                        }
+                    }
+                    #[cfg(not(unix))]
+                    {
+                        // On non-Unix platforms, try to kill just the child
+                        // (process groups not available)
+                        let _ = child.kill().await;
                     }
                 }
                 return Err(AttractorError::CommandTimeout {
@@ -562,7 +578,7 @@ impl NodeHandler for CodergenHandler {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        if !output.status.success() && stdout.is_empty() {
+        if !output.status.success() {
             return Err(AttractorError::HandlerError {
                 handler: "codergen".into(),
                 node: node.id.clone(),
@@ -570,7 +586,11 @@ impl NodeHandler for CodergenHandler {
                     "{} exited with {}: {}",
                     provider.display_name(),
                     output.status,
-                    stderr.trim()
+                    if stdout.is_empty() {
+                        stderr.trim()
+                    } else {
+                        &stdout[..stdout.len().min(500)]
+                    }
                 ),
             });
         }

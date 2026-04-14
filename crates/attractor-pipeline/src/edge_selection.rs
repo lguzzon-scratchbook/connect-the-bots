@@ -4,8 +4,21 @@
 //! based on a priority cascade: condition match, preferred label, suggested next
 //! IDs, highest weight, and lexical tiebreak.
 
+use std::sync::OnceLock;
+
 use crate::condition::{evaluate_condition, parse_condition};
 use crate::graph::{PipelineEdge, PipelineGraph};
+
+/// Regex for stripping accelerator prefixes from labels.
+/// Compiled once and cached for all subsequent calls.
+static LABEL_NORMALIZER_RE: OnceLock<regex::Regex> = OnceLock::new();
+
+fn get_label_normalizer() -> &'static regex::Regex {
+    LABEL_NORMALIZER_RE.get_or_init(|| {
+        regex::Regex::new(r"^(?:\[\w\]\s*|\w\)\s*|\w-\s*)")
+            .expect("Label normalizer regex is valid")
+    })
+}
 
 /// Select the next edge to follow after a node completes.
 /// Returns `None` if no edges are available (terminal node).
@@ -75,10 +88,7 @@ fn normalize_label(label: &str) -> String {
     let s = label.trim().to_lowercase();
     // Strip accelerator prefixes: [Y] , Y) , Y-
     // Only match if there's an actual accelerator pattern followed by content.
-    regex::Regex::new(r"^(?:\[\w\]\s*|\w\)\s*|\w-\s*)")
-        .unwrap()
-        .replace(&s, "")
-        .to_string()
+    get_label_normalizer().replace(&s, "").to_string()
 }
 
 /// Pick the edge with the highest weight; break ties by lexicographically

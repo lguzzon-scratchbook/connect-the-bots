@@ -53,13 +53,13 @@ fn attr_to_json(val: &attractor_dot::AttributeValue) -> serde_json::Value {
 }
 
 /// Map a `StageStatus` to the lowercase string used in edge conditions.
-fn status_to_string(status: StageStatus) -> String {
+fn status_to_string(status: StageStatus) -> &'static str {
     match status {
-        StageStatus::Success => "success".to_string(),
-        StageStatus::PartialSuccess => "partial_success".to_string(),
-        StageStatus::Retry => "retry".to_string(),
-        StageStatus::Fail => "fail".to_string(),
-        StageStatus::Skipped => "skipped".to_string(),
+        StageStatus::Success => "success",
+        StageStatus::PartialSuccess => "partial_success",
+        StageStatus::Retry => "retry",
+        StageStatus::Fail => "fail",
+        StageStatus::Skipped => "skipped",
     }
 }
 
@@ -240,20 +240,29 @@ impl PipelineExecutor {
             completed_nodes.push(current_node.id.clone());
             node_outcomes.insert(current_node.id.clone(), outcome.clone());
 
-            // Track cost from this node
+            // Track cost from this node (with validation)
             if let Some(cost) = outcome
                 .context_updates
                 .get(&format!("{}.cost_usd", current_node.id))
             {
                 if let Some(c) = cost.as_f64() {
-                    total_cost += c;
-                    tracing::info!(
-                        node = %current_node.id,
-                        node_cost = c,
-                        total_cost = total_cost,
-                        budget_remaining = max_budget - total_cost,
-                        "Cost update"
-                    );
+                    // Validate: reject negative costs and NaN
+                    if c.is_nan() || c < 0.0 {
+                        tracing::warn!(
+                            node = %current_node.id,
+                            node_cost = c,
+                            "Ignoring invalid cost value (negative or NaN)"
+                        );
+                    } else {
+                        total_cost += c;
+                        tracing::info!(
+                            node = %current_node.id,
+                            node_cost = c,
+                            total_cost = total_cost,
+                            budget_remaining = max_budget - total_cost,
+                            "Cost update"
+                        );
+                    }
                 }
             }
 
@@ -262,7 +271,7 @@ impl PipelineExecutor {
             context
                 .set(
                     "outcome",
-                    serde_json::Value::String(status_to_string(outcome.status)),
+                    serde_json::Value::String(status_to_string(outcome.status).to_string()),
                 )
                 .await;
             if let Some(ref label) = outcome.preferred_label {
@@ -275,7 +284,7 @@ impl PipelineExecutor {
             let ctx_snapshot = context.snapshot().await;
             let resolve = |key: &str| -> String {
                 match key {
-                    "outcome" => status_to_string(outcome.status),
+                    "outcome" => status_to_string(outcome.status).to_string(),
                     "preferred_label" => outcome.preferred_label.clone().unwrap_or_default(),
                     _ => ctx_snapshot
                         .get(key)
