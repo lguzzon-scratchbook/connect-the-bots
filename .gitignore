@@ -3,3 +3,9 @@
 .pas/
 .envrc
 .DS_Store
+
+# agents-reverse-engineer
+*.sum
+.npm-cache
+.gitignore
+.agents-reverse-engineer
