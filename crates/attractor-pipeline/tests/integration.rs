@@ -14,7 +14,7 @@ use attractor_pipeline::{
     ExitHandler, HandlerRegistry, NodeHandler, PipelineExecutor, PipelineGraph, PipelineNode,
     StartHandler,
 };
-use attractor_types::{Context, Outcome, StageStatus};
+use attractor_types::{AttractorError, Context, Outcome, StageStatus};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -529,10 +529,9 @@ async fn goal_gate_unsatisfied_without_retry_returns_error() {
         "pipeline should fail with unsatisfied goal gate"
     );
     let err = result.unwrap_err();
-    let err_msg = err.to_string();
     assert!(
-        err_msg.contains("Goal gate unsatisfied") || err_msg.contains("goal_gate"),
-        "error should mention goal gate; got: {err_msg}"
+        matches!(err, AttractorError::GoalGateUnsatisfied { ref node } if node == "review"),
+        "expected GoalGateUnsatisfied for 'review' node, got: {err:?}"
     );
 }
 
@@ -600,10 +599,11 @@ async fn goal_gate_with_retry_target_retries_then_succeeds() {
         .await
         .expect("pipeline should succeed after retry");
 
-    // The handler was called at least twice (once fail, once success)
-    assert!(
-        call_count.load(Ordering::SeqCst) >= 2,
-        "handler should be called at least twice (fail then succeed)"
+    // The handler was called exactly twice (once fail, once success)
+    assert_eq!(
+        call_count.load(Ordering::SeqCst),
+        2,
+        "handler should be called exactly twice (fail then succeed)"
     );
     assert!(
         result.completed_nodes.contains(&"done".to_string()),

@@ -20,32 +20,37 @@ fn generate_dot_graph(node_count: usize) -> String {
     dot
 }
 
-fn generate_branching_dot_graph(branch_factor: usize, depth: usize) -> String {
+fn generate_branching_dot_graph(node_count: usize) -> String {
+    // Generate a simple valid DOT graph for branching benchmark
+    // Creates a binary tree structure with proper quoted attributes
     let mut dot = format!("digraph Pipeline {{\n");
     dot.push_str("    start [shape=\"Mdiamond\"];\n");
     dot.push_str("    end [shape=\"Msquare\"];\n");
 
-    for d in 0..depth {
-        for b in 0..branch_factor.pow(d as u32) {
-            let id = format!("node_{}_{}", d, b);
-            dot.push_str(&format!("    {} [shape=box];\n", id));
-        }
+    // Create nodes with properly quoted attributes
+    for i in 0..node_count {
+        dot.push_str(&format!("    n{} [shape=\"box\"];\n", i));
     }
 
-    dot.push_str("    start -> node_0_0;\n");
-    for d in 0..depth - 1 {
-        for b in 0..branch_factor.pow(d as u32) {
-            let parent = format!("node_{}_{}", d, b);
-            for i in 0..branch_factor {
-                let child = format!("node_{}_{}", d + 1, b * branch_factor + i);
-                dot.push_str(&format!("    {} -> {};\n", parent, child));
-            }
-        }
+    // Connect start to first node
+    if node_count > 0 {
+        dot.push_str("    start -> n0;\n");
     }
 
-    for b in 0..branch_factor.pow((depth - 1) as u32) {
-        let leaf = format!("node_{}_{}", depth - 1, b);
-        dot.push_str(&format!("    {} -> end;\n", leaf));
+    // Create binary tree edges
+    for i in 0..node_count {
+        let left = i * 2 + 1;
+        let right = i * 2 + 2;
+        if left < node_count {
+            dot.push_str(&format!("    n{} -> n{};\n", i, left));
+        }
+        if right < node_count {
+            dot.push_str(&format!("    n{} -> n{};\n", i, right));
+        }
+        // Connect leaf nodes to end
+        if left >= node_count && right >= node_count {
+            dot.push_str(&format!("    n{} -> end;\n", i));
+        }
     }
 
     dot.push_str("}\n");
@@ -80,8 +85,9 @@ fn bench_outgoing_edges(c: &mut Criterion) {
 
     c.bench_function("graph/outgoing_edges_lookup", |b| {
         b.iter(|| {
+            // Batch 50 lookups to amortize measurement overhead
             for i in 0..50 {
-                let _ = graph.outgoing_edges(&format!("step{}", i));
+                black_box(graph.outgoing_edges(&format!("step{}", i)));
             }
         })
     });
@@ -93,17 +99,16 @@ fn bench_start_node_lookup(c: &mut Criterion) {
     let graph = PipelineGraph::from_dot(parsed).unwrap();
 
     c.bench_function("graph/start_node_lookup", |b| {
-        b.iter(|| graph.start_node())
+        b.iter(|| black_box(graph.start_node()))
     });
 }
 
 fn bench_branching_graph(c: &mut Criterion) {
     let mut group = c.benchmark_group("graph/branching");
-    for (branches, depth) in [(2, 4), (3, 3), (4, 3)].iter() {
-        let dot = generate_branching_dot_graph(*branches, *depth);
+    for size in [7, 15, 31].iter() {
+        let dot = generate_branching_dot_graph(*size);
         let parsed = attractor_dot::parse(&dot).unwrap();
-        let id = format!("{}_branches_{}_depth", branches, depth);
-        group.bench_with_input(BenchmarkId::new("from_dot", id), &parsed, |b, parsed| {
+        group.bench_with_input(BenchmarkId::from_parameter(size), &parsed, |b, parsed| {
             b.iter(|| PipelineGraph::from_dot(black_box(parsed.clone())).unwrap())
         });
     }
