@@ -546,11 +546,11 @@ impl NodeHandler for CodergenHandler {
                         "Killing timed-out {} process",
                         provider.display_name()
                     );
-                    // SIGKILL the child process — its MCP server children will
-                    // get SIGHUP when their parent exits.
+                    // Kill the entire process group atomically using negative PID.
+                    // This avoids race condition between getpgid() and killpg().
                     #[cfg(unix)]
                     unsafe {
-                        libc::kill(pid as i32, libc::SIGKILL);
+                        libc::kill(-(pid as i32), libc::SIGKILL);
                     }
                 }
                 return Err(AttractorError::CommandTimeout {
