@@ -3,15 +3,29 @@ set -euo pipefail
 
 INSTALL_DIR="${HOME}/.local/bin"
 BIN_NAME="pas"
+PROFILE="${PAS_PROFILE:-dist}"
 
-echo "Building Pascal's Discrete Attractor (release)..."
-cargo build -p attractor-cli --release
+# Check for fast build tools and suggest setup
+if [ "${1:-}" = "--fast" ] || [ "${1:-}" = "-f" ]; then
+    PROFILE="quick-release"
+    echo "Using quick-release profile for faster build..."
+else
+    echo "Building Pascal's Discrete Attractor (profile: ${PROFILE})..."
+    echo "For faster builds (90% optimized), use: ./install.sh --fast"
+fi
+
+# Run fast-build setup if sccache not available
+if [ -z "${RUSTC_WRAPPER:-}" ] && ! command -v sccache &> /dev/null; then
+    echo "Tip: Run ./scripts/setup-fast-builds.sh once for 2-3x faster incremental builds"
+fi
+
+cargo build -p attractor-cli --profile "${PROFILE}"
 
 # Create install directory if needed
 mkdir -p "${INSTALL_DIR}"
 
-# Copy binary
-cp "target/release/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
+# Copy binary from correct profile directory
+cp "target/${PROFILE}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}"
 
 # Sign with Apple Developer identity (prevents macOS SIGKILL on unsigned binaries)
 if [[ -z "${CODESIGN_IDENTITY:-}" ]]; then
