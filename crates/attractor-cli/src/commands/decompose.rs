@@ -300,7 +300,7 @@ fn strip_code_fences(s: &str) -> String {
     let lines: Vec<&str> = s.lines().collect();
     if lines.len() > 2
         && lines[0].starts_with("```")
-        && lines.last().map_or(false, |l| l.trim() == "```")
+        && lines.last().is_some_and(|l| l.trim() == "```")
     {
         lines[1..lines.len() - 1].join("\n")
     } else {
@@ -535,7 +535,7 @@ pub async fn validate_decomposition(
         let title = ticket["title"].as_str().unwrap_or("?");
         let missing: Vec<&str> = check_fields
             .iter()
-            .filter(|&&field| ticket[field].as_str().map_or(true, |v| v.trim().is_empty()))
+            .filter(|&&field| ticket[field].as_str().is_none_or(|v| v.trim().is_empty()))
             .copied()
             .collect();
 
