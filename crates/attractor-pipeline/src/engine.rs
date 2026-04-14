@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use attractor_types::{AttractorError, Context, Outcome, Result, StageStatus};
+use tokio::time::timeout;
 
 use crate::checkpoint::{clear_checkpoint, load_checkpoint, save_checkpoint, PipelineCheckpoint};
 use crate::edge_selection::select_edge;
@@ -222,7 +223,18 @@ impl PipelineExecutor {
                         node: current_node.id.clone(),
                         message: format!("No handler registered for type '{}'", handler_type),
                     })?;
-            let outcome = handler.execute(current_node, &context, graph).await?;
+            let execution = handler.execute(current_node, &context, graph);
+            let outcome = if let Some(t) = current_node.timeout {
+                timeout(t, execution).await.map_err(|_| {
+                    AttractorError::HandlerError {
+                        handler: handler_type.clone(),
+                        node: current_node.id.clone(),
+                        message: format!("Timeout after {:?}", t),
+                    }
+                })?
+            } else {
+                execution.await
+            }?;
 
             // Record
             completed_nodes.push(current_node.id.clone());
