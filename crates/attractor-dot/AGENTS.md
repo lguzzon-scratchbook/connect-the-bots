@@ -16,17 +16,19 @@ Parses strict Graphviz DOT dialect for Attractor pipeline definitions. Converts 
 
 - Rust workspace member
 - `winnow` 0.7 for parser combinators
-- `serde` for attribute serialization  
+- `serde` for attribute serialization
 - `criterion` dev dependency for benchmarks
 - Depends on workspace crate `attractor-types` for `AttractorError`
 
 ## Behavioral Contracts
 
 **Duration Formats**
+
 - Serialization template: `{}ms` (milliseconds only)
 - Parsing suffixes: `ms` (×1), `s` (×1), `m` (×60), `h` (×3600), `d` (×86400)
 
 **Type Parsing Patterns**
+
 - Identifier: `[A-Za-z_][A-Za-z0-9_]*`
 - Qualified ID: `identifier ( '.' identifier )+`
 - Float: `(opt(alt(('-', '+'))), digit1, '.', digit1)`
@@ -36,6 +38,7 @@ Parses strict Graphviz DOT dialect for Attractor pipeline definitions. Converts 
 Quoted strings matching duration syntax (e.g., `"20m"`, `"500ms"`) parse as `AttributeValue::String`, not `AttributeValue::Duration`. Downstream must explicitly invoke `parse_duration_str`.
 
 **Error Messages**
+
 - `strict` prefix rejected: `'digraph' keyword (strict graphs are not supported)`
 - Undirected `graph` rejected: `'digraph' keyword (undirected graphs are not supported)`
 - `--` operator rejected: `only directed edges (->); undirected edges (--) are not supported`
@@ -50,6 +53,7 @@ Syntax `A -> B -> C` expands to pairwise `EdgeDef` entries `(A,B)` and `(B,C)` i
 `node [attr=val]` and `edge [attr=val]` statements apply to subsequent node/edge definitions within scope; inherited by subgraphs via `parent_node_defaults`/`parent_edge_defaults` parameters in `merge_statements`.
 
 **Benchmark Fixture Templates**
+
 - Node declaration: `node{} [shape="box",label="Node {}",max_retries="3",timeout="30s"]`
 - Edge declaration: `node{} -> node{};`
 - Subgraph cluster: `subgraph cluster_{} { inner{}_a -> inner{}_b; }`

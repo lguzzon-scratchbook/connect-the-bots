@@ -2,44 +2,52 @@
 
 # style
 
-`main.scss` implements Attractor Web Interface styling with Catppuccin Mocha dark theme, defining CSS custom properties for layout grids, terminal containers, document viewers, execution panels, and interactive components.
+`main.scss` implements Attractor Web Interface styling with Catppuccin Mocha dark theme for terminal + document viewer layout with responsive 2/3-column grid.
 
 ## Contents
 
-- [main.scss](./main.scss) — SCSS stylesheet defining color variables, responsive layout architecture, and component styling for terminal, document viewer, execution panels, and modals.
+- [main.scss](./main.scss) — SCSS stylesheet defining color variables, responsive layout architecture, and component styling for terminal, document viewer, markdown rendering, execution panels, modals, and interactive components.
 
 ## Stack
 
 - **SCSS/Sass**: Preprocessor syntax enabling variables, nesting, and mixins
-- **Catppuccin Mocha**: Color palette with `$base: #1e1e2e`, `$mantle: #181825`, `$crust: #11111b`, `$text: #cdd6f4`, `$subtext: #a6adc8`, `$primary: #89b4fa`, `$success: #a6e3a1`, `$error: #f38ba8`
+- **Catppuccin Mocha**: Color palette with `$base: #1e1e2e`, `$mantle: #181825`, `$crust: #11111b`, `$text: #cdd6f4`, `$subtext: #a6adc8`, `$primary: #89b4fa`, `$primary-hover: #74a8f7`, `$success: #a6e3a1`, `$error: #f38ba8`, `$warning: #f9e2af`, `$surface0: #313244`, `$surface1: #45475a`, `$surface2: #585b70`, `$overlay: #6c7086`
 - **Design Tokens**: `$radius: 8px`, `$radius-sm: 4px` standardize border radii
 
 ## Layout Architecture
 
-`.app-workspace` establishes root flexbox layout with `flex-direction: row` and `height: 100vh`, containing `.project-sidebar` (220px fixed width) and `.workspace-content` (flex column with `min-width: 0`). `.app-panels` implements primary content grid with `grid-template-columns: 1fr 1fr`, `flex: 1`, and `min-height: 0` constraints for viewport containment. `.panel-left` renders border-right 1px solid `$surface0` with `min-height: 0`. `.panel-right` enables `overflow-y: auto` scrolling with `$base` background.
+`.app-workspace` establishes root flexbox layout with `flex-direction: row` and `height: 100vh`, containing `.project-sidebar` (220px fixed width) and `.workspace-content` (flex column with `min-width: 0`). `.app-panels` implements primary content grid with `grid-template-columns: 1fr 1fr`, `flex: 1`, and `min-height: 0` constraints for viewport containment. `.panel-left` renders `border-right: 1px solid $surface0` with `min-height: 0`. `.panel-right` enables `overflow-y: auto` scrolling with `$base` background.
 
-Responsive breakpoint `@media (min-width: 1800px)` triggers `.app-panels.documents-mode` layout shift to `grid-template-columns: 1fr 1fr 1fr`, hiding `.doc-tabbed` interface and displaying `.doc-column` (flex column with border-left 1px solid `$surface0`).
+Responsive breakpoint `@media (min-width: 1800px)` triggers `.app-panels.documents-mode` layout shift to `grid-template-columns: 1fr 1fr 1fr`, hiding `.doc-tabbed` interface and displaying `.doc-column` (flex column with `border-left: 1px solid $surface0`).
 
 ## Component Taxonomy
 
 ### Terminal & Document Viewer
-`.terminal-wrapper` wraps terminal instances with `flex-direction: column` and `height: 100%`. `.terminal-container` hosts xterm.js instances with `.xterm` height 100% override and 4px padding. `.document-viewer` provides flex column layout with `.doc-column-header` (padding 10px 16px, uppercase 0.75rem font, `$mantle` background) and `.doc-tabs` (flex row, `$mantle` background, bottom border `$surface0`). `.doc-tab.active` renders `$primary` color and 2px solid bottom border. `.doc-content` applies `overflow-y: auto`, 16px 24px padding, and hosts `.markdown-rendered` content.
 
-### Interactive Controls
-`.btn` base class defines 6px 16px padding, 1px solid `$surface1` border, and `$radius-sm` border-radius. `.btn-secondary` variant uses `$surface0` background with `$surface1` hover state. `.btn-approve` applies `$success` background, `$crust` text color, and `filter: brightness(1.1)` hover effect. `.project-sidebar` maintains 220px width, `$mantle` background, and 1px solid `$surface0` right border. `.project-entry.active` renders 3px solid `$primary` left border and `$surface0` background.
-
-### Execution Panels
-`.execution-panel` provides 24px padding with `.execution-header` flex space-between layout. `.execution-stats` groups metadata with 16px gap. `.badge-running` applies `rgba($primary, 0.15)` background with `$primary` text; `.badge-done` uses `rgba($success, 0.15)` with `$success` text. `.execution-node` containers use `$mantle` background, 1px solid `$surface0` border, and state variants: `.in-progress` (border-color `$primary` with pulsing status indicator), `.success` (status color `$success`), `.failed` (border-color `$error`, status color `$error`), `.skipped` (opacity 0.5).
-
-### Folder Picker Modal
-`.folder-picker-overlay` provides fixed inset 0 positioning with `rgba(0,0,0,0.6)` backdrop (z-index 100). `.folder-picker-modal` constrains width to 600px with max-height 80vh, `$base` background, and 1px solid `$surface0` border. `.path-input` fields use `$mantle` background with `$primary` focus border-color. `.open-btn` and `.select-btn` apply `$primary` background with `$primary-hover` hover state.
+`.terminal-wrapper` wraps terminal instances with `flex-direction: column`, `height: 100%`, and `min-height: 0`. `.terminal-container` hosts xterm.js instances with `.xterm` height 100% override, `flex: 1`, and 4px padding on `$base` background. `.document-viewer` provides flex column layout with `height: 100%`. `.doc-column-header` renders padding 10px 16px, uppercase 0.75rem font with `letter-spacing: 0.05em`, `$mantle` background, and `border-bottom: 1px solid $surface0`. `.doc-tabs` implements flex row with `padding: 0 16px`, `$mantle` background, and bottom border `$surface0`. `.doc-tab` applies `padding: 10px 20px`, `border-bottom: 2px solid transparent`, and `transition: all 0.15s`. `.doc-tab.active` renders `$primary` color and `border-bottom-color: $primary`. `.doc-content` applies `flex: 1`, `overflow-y: auto`, and `padding: 16px 24px`. `.doc-placeholder` provides centered flex-col layout with `min-height: 300px`, `$overlay` color, and `code` blocks using `$surface0` background, `$radius-sm` border-radius, and SF Mono font-family.
 
 ### Markdown Rendering
-`.markdown-rendered` sets 1.7 line-height and `$text` color. `h1` elements render at 1.5rem, `h2` at 1.25rem, `h3` at 1.1rem with 1.5em top margin. `pre` blocks receive `$mantle` background, 1px solid `$surface0` border, `$radius` border-radius, and 16px padding. `code` elements use SF Mono/Consolas font-family, `$surface0` background, and 2px 6px padding. `blockquote` elements render 3px solid `$primary` left border with `$subtext` color.
+
+`.markdown-rendered` sets `line-height: 1.7` and `$text` color. `h1` elements render at `1.5rem`, `h2` at `1.25rem`, `h3` at `1.1rem` with `margin-top: 1.5em`. `p` applies `margin-bottom: 1em`. `ul, ol` receive `margin-bottom: 1em` and `padding-left: 24px`. `li` applies `margin-bottom: 4px`. `code` elements use SF Mono/Monaco/Cascadia Code/Roboto Mono/Consolas font-family, `$surface0` background, `padding: 2px 6px`, `border-radius: 3px`, and `font-size: 0.9em`. `pre` blocks receive `$mantle` background, `border: 1px solid $surface0`, `$radius` border-radius, `padding: 16px`, and `overflow-x: auto`. `table` implements `width: 100%` with borders `1px solid $surface0` and `th` using `$surface0` background. `blockquote` renders `border-left: 3px solid $primary`, `padding-left: 16px`, and `$subtext` color. `a` applies `$primary` color with hover underline. `hr` renders `border-top: 1px solid $surface0` with `margin: 24px 0`.
+
+### Interactive Controls
+
+`.btn` base class defines 6px 16px padding, 1px solid `$surface1` border, and `$radius-sm` border-radius with `transition: all 0.15s`. `.btn-secondary` variant uses `$surface0` background with `$surface1` hover state. `.btn-approve` applies `$success` background, `$crust` text color, `border-color: $success`, and `filter: brightness(1.1)` hover effect. `.approval-progress` implements flex layout with `gap: 8px` and `$subtext` color. `.project-sidebar` maintains 220px width, `$mantle` background, and 1px solid `$surface0` right border. `.sidebar-new-project` applies `$primary` color with hover `rgba($primary, 0.1)` background. `.project-entry` applies `padding: 8px 16px` and `border-left: 3px solid transparent`. `.project-entry.active` renders `border-left-color: $primary` and `$surface0` background. `.project-close` uses `opacity: 0` with hover reveal and `$error` hover color.
+
+### Execution Panels
+
+`.execution-panel` provides `padding: 24px`. `.execution-header` implements flex space-between layout with `h2` at `1.125rem`. `.execution-stats` groups metadata with `gap: 16px`. `.badge` applies `padding: 2px 10px`, `border-radius: 12px`, and uppercase text. `.badge-running` applies `rgba($primary, 0.15)` background with `$primary` text. `.badge-done` uses `rgba($success, 0.15)` background with `$success` text. `.cost-display` applies `$subtext` color with `font-variant-numeric: tabular-nums`. `.execution-error` renders `rgba($error, 0.1)` background, `border: 1px solid rgba($error, 0.3)`, and `$error` color.
+
+`.execution-node` containers use `$mantle` background, 1px solid `$surface0` border, and state variants: `.in-progress` (border-color `$primary` with pulsing status indicator), `.success` (status color `$success`), `.failed` (border-color `$error`, status color `$error`), `.skipped` (`opacity: 0.5`). `.execution-node-header` implements flex layout with `gap: 12px`, `padding: 10px 14px`, and hover `rgba(255, 255, 255, 0.02)` background. `.execution-node-content` renders `border-top: 1px solid $surface0`, `rgba(0, 0, 0, 0.15)` background, and `pre` elements with `white-space: pre-wrap`.
+
+### Folder Picker Modal
+
+`.folder-picker-overlay` provides fixed inset 0 positioning with `rgba(0, 0, 0, 0.6)` backdrop and `z-index: 100`. `.folder-picker-modal` constrains width to 600px with `max-height: 80vh`, `$base` background, `border: 1px solid $surface0`, and `box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5)`. `.close-btn` applies `font-size: 24px` and `$subtext` color. `.path-input` fields use `$mantle` background with `$primary` focus border-color. `.breadcrumb` renders `$mantle` background with `word-break: break-all`. `.open-btn` and `.select-btn` apply `$primary` background with `$primary-hover` hover state. `.directory-list` constrains `max-height: 300px` with `overflow-y: auto` and `border: 1px solid $surface0`. `.dir-entry` applies `padding: 6px 12px` with hover `$surface0` background. `.dir-icon` uses `$primary` color. `.loading-indicator` applies `$subtext` color. `.error-message` renders `rgba($error, 0.1)` background and `border: 1px solid rgba($error, 0.3)`.
 
 ## Behavioral Contracts
 
 **Color Variables:**
+
 - `$primary: #89b4fa` — interactive elements, links, active states
 - `$primary-hover: #74a8f7` — hover state for primary buttons
 - `$success: #a6e3a1` — approval buttons, success badges, completed states
@@ -56,32 +64,48 @@ Responsive breakpoint `@media (min-width: 1800px)` triggers `.app-panels.documen
 - `$crust: #11111b` — darkest shade, used for approve button text
 
 **Layout Constants:**
+
 - Sidebar width: 220px (`.project-sidebar`)
 - Border radius standard: 8px (`$radius`)
 - Border radius small: 4px (`$radius-sm`)
 - Responsive breakpoint: 1800px (`@media (min-width: 1800px)`)
-- Grid gap: implicit 0 (grid-template-columns: 1fr 1fr default, 1fr 1fr 1fr in wide mode)
+- Grid default: `1fr 1fr` (`.app-panels`)
+- Grid wide mode: `1fr 1fr 1fr` (`.app-panels.documents-mode`)
+- Modal width: 600px (`.folder-picker-modal`)
+- Directory list max-height: 300px
 
 **Class Name Patterns:**
+
 - State modifiers: `.active`, `.in-progress`, `.success`, `.failed`, `.skipped`
-- Variant prefixes: `.btn-*`, `.badge-*`, `.panel-*`
-- Container suffixes: `-wrapper`, `-container`, `-content`, `-header`
+- Variant prefixes: `.btn-*`, `.badge-*`, `.panel-*`, `.doc-*`
+- Container suffixes: `-wrapper`, `-container`, `-content`, `-header`, `-overlay`, `-modal`
 
 **Animation Definitions:**
+
 ```css
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 ```
-Applied via `.spinner-sm` with 0.8s linear infinite timing.
+
+Applied via `.spinner-sm` with `0.8s linear infinite` timing (14px size, `border: 2px solid $surface1`, `border-top-color: $primary`).
 
 ```css
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 ```
-Applied with 1.5s ease-in-out infinite timing for `.in-progress` status indicators.
+
+Applied with `1.5s ease-in-out infinite` timing for `.in-progress` status indicators.
 
 **Z-Index Layers:**
+
 - `.folder-picker-overlay`: 100

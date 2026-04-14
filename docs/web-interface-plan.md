@@ -63,12 +63,14 @@ crates/attractor-web/
 ### Streaming: Two Layers
 
 **Layer 1: Claude CLI → Server** (for PRD/spec generation)
+
 - `claude -p "..." --output-format stream-json --include-partial-messages`
 - Read stdout line-by-line as NDJSON
 - Each line has `type` field: `system`, `assistant` (text deltas), `result`
 - Stream text deltas to browser as they arrive
 
 **Layer 2: Pipeline Events → Browser** (for execution)
+
 - The existing `EventEmitter` (broadcast channel) in `events.rs` already emits `PipelineEvent` variants: `StageStarted`, `StageCompleted`, `EdgeSelected`, etc.
 - SSE endpoint subscribes to the emitter and forwards events as JSON
 - Browser `EventSource` receives and renders them
@@ -76,6 +78,7 @@ crates/attractor-web/
 ### Modifications to Existing Crates
 
 **`attractor-pipeline/src/handlers/mod.rs`** — CodergenHandler changes:
+
 - Add `CodergenConfig` to support `--output-format stream-json` + `--session-id`
 - When `stream-json` mode: read stdout line-by-line, parse NDJSON, forward content deltas to an optional `broadcast::Sender`, accumulate final `result` for Outcome
 - When `json` mode (default): unchanged behavior, backward compatible
@@ -111,6 +114,7 @@ tokio-stream = "0.1"        # BroadcastStream for SSE
 ## Implementation Phases
 
 ### Phase 1: Scaffold (get pixels on screen)
+
 - Add `crates/attractor-web` to workspace
 - Set up Leptos + Axum with `cargo-leptos`
 - Three routes with placeholder content: `/`, `/editor`, `/execute`
@@ -119,23 +123,27 @@ tokio-stream = "0.1"        # BroadcastStream for SSE
 - Verify `cargo leptos watch` works
 
 ### Phase 2: PRD/Spec Generation
+
 - `generate_prd_spec` server function in `server/generate.rs`
 - Shell out to `claude -p` with a system prompt that produces structured PRD + Spec
 - Start with `--output-format json` (simpler; streaming comes in Phase 3)
 - Wire prompt page → server fn → navigate to editor with results
 
 ### Phase 3: Streaming Infrastructure
+
 - Modify `CodergenHandler` with `CodergenConfig` for `stream-json` support
 - Add `session_id` to `PipelineCheckpoint`
 - SSE endpoint at `/api/stream/{session_id}`
 - Upgrade PRD generation to use `stream-json` for live typing effect
 
 ### Phase 4: Pipeline Execution
+
 - `start_pipeline` server function
 - Wire "Execute" button → start pipeline → open SSE stream
 - `ExecutionPage` renders node progress, content, cost in real time
 
 ### Phase 5: Resume & Polish
+
 - Session resume on browser reconnect
 - Checkpoint-based resume on server restart
 - Styling, loading states, error handling

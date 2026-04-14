@@ -7,17 +7,21 @@ Core autonomous agent loop implementation coordinating LLM inference with tool e
 ## Contents
 
 ### Conversation Management
+
 - [fidelity.rs](./fidelity.rs): `FidelityMode` enum (`Full`, `Truncate`, `Compact`, `Summary`) and `apply_fidelity` processor for history truncation strategies.
 - [loop_detection.rs](./loop_detection.rs): `LoopDetector` sliding window (`window_size`, `recent_calls`) detecting repetitive tool signatures; `SteeringInjector` generates corrective messages.
 
 ### Prompt Construction
+
 - [prompt_builder.rs](./prompt_builder.rs): `SystemPromptBuilder` priority-based assembler (priorities 0-5) with `with_base`, `with_goal`, `with_tools`, `build`; `discover_project_docs` searches candidate files (`CLAUDE.md`, `.cursorrules`, etc.); `ProjectDoc` struct.
 
 ### Session Orchestration
+
 - [lib.rs](./lib.rs): `AgentSession` main orchestrator (`process_input` entry point, `build_request`, `execute_tool_calls`); `SessionConfig` defaults; `Turn` enum history variants (`User`, `Assistant`, `ToolResults`, `System`, `Steering`); `MAX_TOOL_OUTPUT_LEN` constant.
 - [subagent.rs](./subagent.rs): `SubagentManager` registry (`register` yields `subagent-N` IDs, `update_status`, `running_agents`); `SubagentConfig` spawn parameters; `SubagentStatus` lifecycle enum (`Running`, `Completed`, `Failed`).
 
 ### Test Utilities
+
 - [test_utils.rs](./test_utils.rs): `MockEnv` stub implementing `ExecutionEnvironment`; `SequenceMockProvider` mock `ProviderAdapter`; `EchoTool` test `Tool` implementation; `make_client` helper constructing `attractor_llm::LlmClient`.
 
 ## Architecture / Data Flow
@@ -49,6 +53,7 @@ Core autonomous agent loop implementation coordinating LLM inference with tool e
 **Loop Detection Signatures**: Format `"{}:{}"` concatenating `tool_name` and `u64` hash from `DefaultHasher::write(args.to_string().as_bytes())`. Detection triggers when `recent_calls.len() >= window_size` and all elements equal first signature.
 
 **Steering Message Templates**:
+
 - Loop warning: `"WARNING: You have called the '{}' tool {} times in a row with the same arguments. This appears to be a loop. Please try a different approach or tool."`
 - Refocus: `"Please refocus on the current goal: {}. Consider what steps are still needed and take a different approach."`
 

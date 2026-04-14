@@ -7,28 +7,34 @@ Leptos UI component library for Attractor web interface. Renders project managem
 ## Contents
 
 ### Layout Components
+
 - [layout.rs](./layout.rs): `ProjectView` two-column layout orchestrates `Terminal` (left) and `DocumentViewer`/`ExecutionPanel` (right) via `RightPanel` enum (`Documents`/`Execution` variants). Manages `session_id` signal, `can_approve` computed from `prd_exists && spec_exists`, and `container_id` format `"terminal-{project_id}"`.
 - [project_sidebar.rs](./project_sidebar.rs): `ProjectSidebar` manages open projects via `RwSignal<Vec<Project>>` and `RwSignal<Option<i64>>` for active selection. Renders `FolderPicker` modal on `show_picker` signal. Handles deduplication in `handle_project_selected`, async close via `spawn_local` calling `close_project`.
 
 ### Document & Execution Viewers
+
 - [document_viewer.rs](./document_viewer.rs): `DocumentViewer` displays PRD/Spec documents with `DocTab` enum (`Prd`/`Spec`). Hydrates via `Resource` calling `get_cached_documents`, streams live updates via SSE URL `format!("/api/documents/stream?project_id={}", project_id)`, invokes `on_prd_change`/`on_spec_change` callbacks on content changes.
 - [execution_panel.rs](./execution_panel.rs): `ExecutionPanel` accepts `session_id: F` where `F: Fn() -> String`. Streams `PipelineEvent` JSON from `/api/stream/{session_id}`, maps `event_type` values (`node_start`, `node_complete`, `pipeline_complete`, `error`) to `NodeData` vector updates, renders `ExecutionNode` children via `<For>` keyed by `node_id`.
 - [execution_node.rs](./execution_node.rs): `ExecutionNode` renders collapsible pipeline steps with `NodeStatus` enum (`Pending`, `InProgress`, `Success`, `Failed`, `Skipped`). Maps status to CSS classes (`pending`, `in-progress`, `success`, `failed`, `skipped`) and icons (`○`, `●`, `✓`, `✗`, `○`). Formats `cost` via `"${:.2}"`.
 
 ### Controls & Inputs
+
 - [approval_bar.rs](./approval_bar.rs): `ApprovalBar<F>` triggers `start_execution(project_id)` via `Action::new`. Tracks `ExecutionPhase` via `signal(Option::<ExecutionPhase>::None)`. Displays phase labels `"Decomposing..."`, `"Scaffolding..."`, `"Starting pipeline..."`. Button text `"Approve & Execute"`. Disabled when `!enabled() || is_loading()`.
 - [folder_picker.rs](./folder_picker.rs): `FolderPicker` modal accepts `on_select: F` (`Fn(Project)`) and `on_close`. Manages `path_input`, `current_path`, `dir_entries` signals. Calls `list_directory` for browser navigation, `open_project` for selection. Renders unicode icons `"\u{1F4C1}"` (📁) and close button `"\u{00D7}"` (×).
 
 ### Utilities
+
 - [markdown_render.rs](./markdown_render.rs): `render_markdown(&str) -> String` via `pulldown_cmark` with `ENABLE_TABLES`, `ENABLE_STRIKETHROUGH`, `ENABLE_TASKLISTS` options.
 - [terminal.rs](./terminal.rs): `Terminal` component bridges to xterm.js via JS globals `window.initTerminal(container_id, folder)` and `window.disposeTerminal(container_id)`. Renders `div.terminal-wrapper` containing `div#{container_id}.terminal-container`. Uses `Effect::new` with 50ms `setTimeout` delay for hydration.
 
 ### Module Export
+
 - [mod.rs](./mod.rs): Barrel export of 9 component modules: `approval_bar`, `document_viewer`, `execution_node`, `execution_panel`, `folder_picker`, `layout`, `markdown_render`, `project_sidebar`, `terminal`. Applies `#[allow(unused_variables)]` to document viewer and execution panel imports.
 
 ## Behavioral Contracts
 
 **URL & Format Patterns:**
+
 - SSE endpoint documents: `format!("/api/documents/stream?project_id={}", project_id)`
 - SSE endpoint pipeline: `format!("/api/stream/{}", session_id)`
 - Terminal container ID: `"terminal-{project_id}"`
@@ -37,17 +43,20 @@ Leptos UI component library for Attractor web interface. Renders project managem
 - Unicode folder icon: `"\u{1F4C1}"`
 
 **Status String Mappings:**
+
 - `"Success"` → `NodeStatus::Success`
 - `"Failed"` / `"Fail"` → `NodeStatus::Failed`
 - `"Skipped"` → `NodeStatus::Skipped`
 
 **UI Text Literals:**
+
 - Button: `"Approve & Execute"`, `"Back to Docs"`, `"+ New Project"`
 - Phase labels: `"Decomposing..."`, `"Scaffolding..."`, `"Starting pipeline..."`
 - Empty states: `"No PRD yet. Use Claude Code to create one:"`, `"No Spec yet..."`
 - Error prefix: `"Failed to load directory: {}"`
 
 **CSS Classes:**
+
 - Progress: `approval-progress`, `spinner-sm`, `btn`, `btn-approve`
 - Documents: `document-viewer`, `doc-tabbed`, `doc-tabs`, `doc-tab active`, `doc-column`, `markdown-rendered`
 - Execution: `execution-node-header`, `execution-node-content`, `badge-running`, `badge-done`, `execution-error`
@@ -57,6 +66,7 @@ Leptos UI component library for Attractor web interface. Renders project managem
 ## API Surface
 
 **Component Props:**
+
 - `ApprovalBar<F>`: `project_id: i64`, `enabled: impl Fn() -> bool + Send + Sync + Copy + 'static`, `on_approve: F` where `F: Fn(String) + Copy + Send + Sync + 'static` (receives `session_id`)
 - `DocumentViewer<FP, FS>`: `project_id: i64`, `on_prd_change: FP`, `on_spec_change: FS` where `FP, FS: Fn(bool) + Copy + Send + Sync + 'static`
 - `ExecutionPanel<F>`: `session_id: F` where `F: Fn() -> String + Send + Sync + Copy + 'static`
@@ -67,9 +77,11 @@ Leptos UI component library for Attractor web interface. Renders project managem
 - `Terminal`: `#[prop(into)] folder: String`, `#[prop(into)] container_id: String`
 
 **Functions:**
+
 - `render_markdown(&str) -> String`
 
 **Enums:**
+
 - `NodeStatus`: `Pending`, `InProgress`, `Success`, `Failed`, `Skipped`
 - `RightPanel`: `Documents`, `Execution`
 - `DocTab`: `Prd`, `Spec`

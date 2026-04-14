@@ -19,11 +19,13 @@ Criterion benchmarks for `PipelineGraph` DOT parsing and graph query performance
 ## Behavioral Contracts
 
 DOT attribute patterns:
+
 - Start node: `shape="Mdiamond"` with `label="Start"` (linear) or unlabeled (binary)
 - End node: `shape="Msquare"` with `label="Done"` (linear) or unlabeled (binary)
 - Intermediate nodes: `shape="box"`, `label="Step {i}"`, `max_retries="3"` (linear only)
 
 DOT edge construction:
+
 - Linear: `start -> step0`, `step{i} -> step{i+1}`, `step{last} -> done`
 - Binary: `start -> n0`, `n{i} -> n{i*2+1}`, `n{i} -> n{i*2+2}`, `n{leaf} -> end`
 

@@ -7,29 +7,35 @@ Pipeline execution engine orchestrating DOT-defined graphs through async node ha
 ## Contents
 
 ### Core Execution
+
 - [engine.rs](./src/engine.rs) - `PipelineExecutor` with `run()`, `run_with_context()`, `run_with_checkpoint()`; enforces `KEY_MAX_STEPS` and `KEY_MAX_BUDGET_USD` context limits; drives traversal loop with `EventEmitter` broadcast
 - [handler.rs](./src/handler.rs) - `NodeHandler` async trait, `DynHandler` wrapper, `HandlerRegistry` with `resolve_type()` priority (explicit `node_type` > shape mapping > `"codergen"` default); `StartHandler`, `ExitHandler`, `ConditionalHandler`
 - [events.rs](./src/events.rs) - `PipelineEvent` enum with 10 variants (`PipelineStarted`, `StageCompleted`, `EdgeSelected`, `CheckpointSaved`, etc.); `EventEmitter` wrapping `tokio::sync::broadcast::Sender` with capacity `256`
 
 ### Graph Structure & Routing
+
 - [graph.rs](./src/graph.rs) - `PipelineGraph` with adjacency-indexed edges and O(1) outgoing edge slices; `PipelineNode` with `goal_gate`, `retry_target`, `timeout`, `llm_model` fields; `from_dot()` layering defaults; `start_node()` resolving `Mdiamond` shape or `"start"/"Start"` ID
 - [edge_selection.rs](./src/edge_selection.rs) - `select_edge()` 5-priority fallback: condition-evaluated edges → `outcome.preferred_label` match → `outcome.suggested_next_ids` match → unconditional edges by `weight` descending with lexical `to` tiebreak → `edges.first()` fallback
 - [condition.rs](./src/condition.rs) - `ConditionExpr` with `Vec<Clause>`; `Clause` with `key`, `Operator` (`Eq`/`NotEq`), `value`; `parse_condition()` grammar `Clause ( '&&' Clause )*` with dot-notation keys; `evaluate_condition()` with resolver closure
 
 ### State Management & Resilience
+
 - [checkpoint.rs](./src/checkpoint.rs) - `PipelineCheckpoint` with `current_node_id`, `completed_nodes`, `node_outcomes`, `context_snapshot`, RFC 3339 `timestamp`; `save_checkpoint()` atomic write via `.tmp` → rename; `load_checkpoint()` returns `Ok(None)` for missing file
 - [retry.rs](./src/retry.rs) - `BackoffPolicy` enum (`Fixed`, `Exponential { base, max }`, `None`); `delay_for_attempt()` calculates `base.as_millis() * 2^attempt` capped at `max`; `execute_with_retry()` with `max_retries + 1` attempts
 - [goal_gate.rs](./src/goal_gate.rs) - `GoalGateResult` with `all_satisfied`, `failed_node_id`, `retry_target`; `check_goal_gates()` validates `goal_gate=true` nodes achieved `StageStatus::Success` or `PartialSuccess`; `resolve_retry_target()` 4-level fallback chain
 
 ### Validation & Styling
+
 - [validation.rs](./src/validation.rs) - `validate()` with 12 `LintRule` implementations (`StartNodeRule`, `TerminalNodeRule`, `ReachabilityRule`, `EdgeTargetExistsRule`, `StartNoIncomingRule`, `ExitNoOutgoingRule`, `ConditionSyntaxRule`, `FidelityValidRule`, `RetryTargetExistsRule`, `GoalGateHasRetryRule`, `ProviderValidRule`, `PromptOnLlmNodesRule`); `Diagnostic` with `rule`, `severity`, `message`
 - [stylesheet.rs](./src/stylesheet.rs) - `Stylesheet` with `Vec<Rule>`; `Rule` with `selector` (`Universal`/`Id`/`Class`), `declarations`; `specificity()` returns `0`/`1`/`2`; `parse_stylesheet()` with comment support; `apply_stylesheet()` populates only `None` fields sorted by specificity ascending
 - [transforms.rs](./src/transforms.rs) - `apply_transforms()` sequential execution: `apply_model_stylesheet` then `expand_prompt_variables`; `expand_variables()` `${key}` substitution against `HashMap<String, String>`
 
 ### Human Interaction
+
 - [interviewer.rs](./src/interviewer.rs) - `Interviewer` async trait with `ask(&self, &Question) -> Result<Answer>`; `Question` with `prompt`, `choices`, `default`, `timeout`; `AutoApproveInterviewer`, `ConsoleInterviewer`, `RecordingInterviewer` implementations
 
 ### Module Interface
+
 - [lib.rs](./src/lib.rs) - Public exports: `PipelineExecutor`, `PipelineConfig`, `PipelineResult`, `PipelineGraph`, `PipelineNode`, `PipelineEdge`, `NodeHandler`, `DynHandler`, `HandlerRegistry`, `StartHandler`, `ExitHandler`, `ConditionalHandler`, `PipelineEvent`, `EventEmitter`, `ConditionExpr`, `parse_condition`, `evaluate_condition`, `PipelineCheckpoint`, `save_checkpoint`, `load_checkpoint`, `clear_checkpoint`, `check_goal_gates`, `enforce_goal_gates`, `GoalGateResult`, `BackoffPolicy`, `execute_with_retry`, `Stylesheet`, `parse_stylesheet`, `apply_stylesheet`, `apply_transforms`, `validate`, `validate_or_raise`, `Diagnostic`, `Severity`, `Interviewer`, `Question`, `Answer`, `AutoApproveInterviewer`, `ConsoleInterviewer`, `RecordingInterviewer`
 
 ## Subdirectories
@@ -74,12 +80,14 @@ DOT parsing via `attractor_dot::parse` → `PipelineGraph::from_dot()` construct
 ## Behavioral Contracts
 
 ### Checkpoint Persistence
+
 - Atomic write pattern: content written to `<logs_root>/checkpoint.json.tmp`, then renamed via `tokio::fs::rename` to `checkpoint.json`
 - Timestamp format: RFC 3339 via `chrono::Utc::now().to_rfc3339()`
 - Serialization: `serde_json::to_string_pretty` with `#[serde(skip_serializing_if = "Option::is_none")]` on `session_id`
 - Backward compatibility: missing `session_id` field deserializes to `None`
 
 ### Condition Grammar
+
 - Syntax: `ConditionExpr ::= Clause ( '&&' Clause )*`
 - Clause: `Key Operator Literal` where `Key ::= identifier ('.' identifier)*` (dot notation for nested access)
 - Operators: `=` (equality), `!=` (inequality)
@@ -87,6 +95,7 @@ DOT parsing via `attractor_dot::parse` → `PipelineGraph::from_dot()` construct
 - Empty or whitespace-only input parses to zero-clause expression evaluating to `true`
 
 ### Edge Selection Priority
+
 1. Condition-evaluated edges: `parse_condition()` → `evaluate_condition()` using context resolver → `best_by_weight_then_lexical()`
 2. Label match: `normalize_label(outcome.preferred_label)` compared to `edge.label`
 3. Suggestion match: `edge.to` present in `outcome.suggested_next_ids` vector
@@ -94,25 +103,30 @@ DOT parsing via `attractor_dot::parse` → `PipelineGraph::from_dot()` construct
 5. Fallback: `edges.first()` for terminal nodes
 
 ### Label Normalization
+
 - Regex: `r"^(?:\[\w\]\s*|\w\)\s*|\w-\s*)"` (matches `[X] `, `X) `, `X- ` accelerator prefixes)
 - Transform: trim → lowercase → strip regex matches
 
 ### Safety Limits
+
 - `KEY_MAX_STEPS="max_steps"`: default `200`, enforced via `step_count` increment per loop iteration; exceedance returns `AttractorError::Other` with message `"Pipeline exceeded maximum step count (200). Use --max-steps to increase."`
 - `KEY_MAX_BUDGET_USD="max_budget_usd"`: default `200.0`, enforced via `total_cost` aggregation from `format!("{}.cost_usd", current_node.id)` context keys; negative or NaN costs skipped with warning; exceedance returns `AttractorError::Other` with message `"Pipeline exceeded budget ($X > $200.00). Use --max-budget-usd to increase."`
 
 ### Retry Target Resolution (4-level fallback)
+
 1. `node.retry_target` (explicit node attribute)
 2. `node.fallback_retry_target` (node fallback attribute)
 3. `graph.attrs.get("retry_target")` matched as `AttributeValue::String(s)`
 4. `graph.attrs.get("fallback_retry_target")` matched as `AttributeValue::String(s)`
 
 ### Stylesheet Specificity & Application
+
 - `Selector::specificity()` returns: `Universal` → `0`, `Class` → `1`, `Id` → `2`
 - Rules sorted ascending by specificity; later declarations overwrite earlier at same specificity
 - Application only populates `None` fields on `PipelineNode`: `llm_model`, `llm_provider`, `reasoning_effort`; explicit values are never overwritten
 
 ### Shape-to-Type Mapping
+
 - `"Mdiamond"` → `"start"`
 - `"Msquare"` → `"exit"`
 - `"box"` → `"codergen"`
@@ -124,15 +138,18 @@ DOT parsing via `attractor_dot::parse` → `PipelineGraph::from_dot()` construct
 - `"house"` → `"stack.manager_loop"`
 
 ### Terminal Detection
+
 - `shape == "Msquare"` or node ID in `{"exit", "end", "done"}` identifies terminal nodes
 - Terminal nodes with outgoing edges trigger `ExitNoOutgoingRule` validation error
 
 ### Variable Expansion
+
 - Pattern: `${key}` constructed via `format!("${{{}}}", key)` in `expand_variables()`
 - Unmatched variables remain literal in output string (no error)
 - Source variables drawn from all graph-level attributes (`String`, `Integer`, `Boolean`, `Float` variants; `Duration` skipped)
 
 ### Validation Rules (12 built-in)
+
 - `StartNodeRule`: exactly one node with `is_start_node` (shape `Mdiamond` or ID `start`/`Start`)
 - `TerminalNodeRule`: at least one node with `is_terminal_node` (shape `Msquare` or ID `exit`/`end`/`done`)
 - `ReachabilityRule`: BFS from start node visits all nodes; unvisited nodes emit error
@@ -149,6 +166,7 @@ DOT parsing via `attractor_dot::parse` → `PipelineGraph::from_dot()` construct
 ## API Surface
 
 Public exports from `lib.rs`:
+
 - Execution: `PipelineExecutor`, `PipelineConfig`, `PipelineResult`
 - Graph: `PipelineGraph`, `PipelineNode`, `PipelineEdge`
 - Handlers: `NodeHandler`, `DynHandler`, `HandlerRegistry`, `StartHandler`, `ExitHandler`, `ConditionalHandler`

@@ -7,20 +7,24 @@ Command handlers for pipeline lifecycle operations (generate, validate, execute,
 ## Contents
 
 ### Orchestration & Execution
+
 - [launch.rs](./launch.rs) - `cmd_launch` orchestrates 3-phase workflow: generate → validate → run via `cmd_generate_dir` and `cmd_run_dir`. Fails fast on validation errors.
 - [run.rs](./run.rs) - `cmd_run` executes single pipeline with checkpoint resume; `cmd_run_dir` batch processes `.dot` files lexically. Uses `stable_logs_dir` (format `.pas/logs/{}-{:08x}`) and `RunManifest` for cross-run tracking.
 - [info.rs](./info.rs) - `cmd_info` inspects pipeline metadata (nodes, edges, start/exit points).
 
 ### Generation
+
 - [generate.rs](./generate.rs) - `cmd_generate` builds Graphviz DOT from `*-spec.md` + optional `*-prd.md` via Claude CLI; `cmd_generate_dir` batch processes. Implements `extract_digraph` with brace-balancing, `build_prompt` with timeout tiers (120s-1200s), spinner UX with `FRAMES` cycling every 80ms.
 - [scaffold.rs](./scaffold.rs) - `cmd_scaffold` queries `bd show {epic_id} --json`, substitutes into `epic-runner.dot` template, outputs to `pipelines/{}.dot`.
 - [plan.rs](./plan.rs) - `cmd_plan` generates PRD/spec documents via `include_str!` templates (`prd-template.md`, `spec-template.md`) or Claude CLI with hardcoded flags.
 
 ### Project Management
-- [decompose.rs](./decompose.rs) - `cmd_decompose` parses specs, spawns `claude -p`, extracts identifiers via regex filters (`test_\w+`, `(?:src|tests)/[\w/]+\.(?:rs|ndjson)`, `[A-Z]\w+::\w+`, `####\s+`([^`]+)`), validates coverage against `bd` ticket fields. `validate_decomposition` checks field completeness and coverage percentage.
+
+- [decompose.rs](./decompose.rs) - `cmd_decompose` parses specs, spawns `claude -p`, extracts identifiers via regex filters (`test_\w+`, `(?:src|tests)/[\w/]+\.(?:rs|ndjson)`, `[A-Z]\w+::\w+`, `####\s+`([^`]+)`), validates coverage against `bd`ticket fields.`validate_decomposition` checks field completeness and coverage percentage.
 - [validate.rs](./validate.rs) - `cmd_validate` loads pipeline, runs `attractor_pipeline::validate`, prints `[ERROR]`/`[WARN]`/`[INFO]`, exits 1 on error severity.
 
 ### Module Surface
+
 - [mod.rs](./mod.rs) - Barrel re-exports 11 functions from 8 submodules: `cmd_decompose`, `validate_decomposition`, `cmd_generate`, `cmd_generate_dir`, `cmd_info`, `cmd_launch`, `cmd_plan`, `cmd_run`, `cmd_run_dir`, `cmd_scaffold`, `cmd_validate`.
 
 ## Patterns
@@ -35,17 +39,20 @@ Command handlers for pipeline lifecycle operations (generate, validate, execute,
 ## Behavioral Contracts
 
 **File Naming Conventions**:
+
 - Spec files: `*-spec.md` (e.g., `phase-01-spec.md`, `auth-spec.md`)
 - PRD files: `*-prd.md` (pairs with spec via suffix replacement)
 - Pipeline outputs: `pipelines/{stem}.dot` (default from `generate.rs`), `pipelines/{}.dot` (from `scaffold.rs`)
 
 **Regex Patterns (decompose.rs)**:
+
 - Test names: `` `r"(test_\w+)"` ``
 - File paths: `` `r"(?:src|tests)/[\w/]+\.(?:rs|ndjson)"` ``
 - Qualified identifiers: `` `r"([A-Z]\w+::\w+)"` ``
 - Headers: `` `r"####\s+`([^`]+)`"` ``
 
 **Timeout Tiers (generate.rs)**:
+
 - Trivial: `timeout="120s"`
 - Light: `timeout="300s"`
 - Standard/doubt: `timeout="600s"`
@@ -53,23 +60,28 @@ Command handlers for pipeline lifecycle operations (generate, validate, execute,
 - Intensive: `timeout="1200s"`
 
 **Log Directory Formats (run.rs)**:
+
 - Single pipeline: `.pas/logs/{stem}-{:08x}`
 - Batch manifest: `.pas/logs/{stem}-batch-{:08x}`
 - Hash derived from `DefaultHasher` on canonical path.
 
 **Claude CLI Invocation Pattern (generate.rs)**:
+
 - Args: `-p`, `-`, `--model sonnet`, `--system-prompt "You are a Graphviz DOT generator. Output ONLY a raw digraph. No commentary, no markdown fences, no skill invocations, no function calls."`, `--settings '{"enabledPlugins":{}}'`, `--strict-mcp-config '{}'`, `--tools ''`, `--output-format json`, `--no-session-persistence`
 
 **Claude CLI Invocation Pattern (plan.rs)**:
+
 - Args: `-p`, `--dangerously-skip-permissions`, `--no-session-persistence`
 
 **bd CLI Contracts**:
+
 - `bd create` returns ticket ID on stdout
 - `bd show {epic_id} --json` returns single-element JSON array
 - `bd list --parent {id} --json --limit 0` returns JSON array
 - `bd dep add {blocked} {blocker}` links tasks
 
 **Error Message Patterns**:
+
 - Validation: `[ERROR] {}: {}` (severity, message)
 - CLI failure: `anyhow::bail!("Claude CLI failed: {}", stderr)`
 - Missing files: `No *-spec.md files found in {}\n\nSpec files must have names ending in -spec.md...`

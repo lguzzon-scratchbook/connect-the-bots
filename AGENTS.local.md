@@ -25,8 +25,8 @@ All crates share a single version in workspace root `Cargo.toml` under `[workspa
 
 ## Docs Reference
 
-| Doc | Contents |
-|-----|----------|
-| `docs/guide.md` | DOT syntax, node attributes, pipeline patterns, planning workflow |
-| `docs/cli-reference.md` | CLI commands, flags, environment setup |
-| `docs/task-verification.md` | Handler dispatch, goal gates, edge routing, budget guards |
+| Doc                         | Contents                                                          |
+| --------------------------- | ----------------------------------------------------------------- |
+| `docs/guide.md`             | DOT syntax, node attributes, pipeline patterns, planning workflow |
+| `docs/cli-reference.md`     | CLI commands, flags, environment setup                            |
+| `docs/task-verification.md` | Handler dispatch, goal gates, edge routing, budget guards         |

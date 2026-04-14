@@ -19,8 +19,8 @@ Leptos v0.7 web interface for Attractor workspace IDE. Renders project sidebar, 
 - [src/](./src/): Application source split into `components/` (Leptos UI) and `server/` (API handlers). `app.rs` composes sidebar and view. `main.rs` starts Axum. `lib.rs` exports `hydrate()` for WASM target.
 - [src/components/](./src/components/): Leptos UI modules. `ProjectSidebar` signals `projects` and `active_project_id`. `Terminal` invokes `window.initTerminal` with `container_id` format `"terminal-{project_id}"` and 50ms `setTimeout` delay. `DocumentViewer` subscribes to `/api/documents/stream`. `ApprovalBar` triggers `start_execution`.
 - [src/server/](./src/server/): Backend implementation. `db.rs` runs `init_db()` with schema creating `projects`, `documents` tables. `documents.rs` spawns `notify::RecommendedWatcher` for `.pas/` directories. `execute.rs` runs `pas decompose` → `pas scaffold` → `run_pipeline_with_streaming`, publishing `node_start`/`node_complete` events. `terminal.rs` manages `portable-pty` sessions with 30-minute idle reaper. `projects.rs` exports `list_open_projects`, `open_project`, `close_project`; template header content: [src/server/projects.annex.sum](./src/server/projects.annex.sum).
-- [style/](./style/): SCSS assets. `main.scss` defines color tokens, grid layouts, component states.
-- [public/js/](./public/js/): Static assets. `xterm-setup.js` implements `window.initTerminal` for WebSocket PTY integration.
+- [style/](./style/): SCSS assets implementing Catppuccin Mocha dark theme. [main.scss](./style/main.scss) defines color variables, responsive grid layouts (default 2-column, wide 3-column at 1800px), and component styling for terminals, document viewers, markdown rendering, execution panels, modals, and interactive controls with animations (spin, pulse) and z-index layering.
+- [public/](./public/): Static asset directory for browser-side JavaScript bridging xterm.js to WebSocket backend. [js/xterm-setup.js](./public/js/xterm-setup.js) exports `window.initTerminal` and `window.disposeTerminal` with session lifecycle management, `sessionStorage` persistence, automatic reconnect logic (1000ms delay), and Catppuccin Mocha terminal theming; maintains instance registry in `window._terminalInstances`.
 
 ## Stack
 
@@ -34,9 +34,11 @@ Leptos v0.7 web interface for Attractor workspace IDE. Renders project sidebar, 
 ## API Surface
 
 **Component Exports**:
+
 - `App() -> impl IntoView` from `lib.rs`
 
 **Leptos Server Functions**:
+
 - `list_open_projects() -> Vec<Project>`
 - `open_project(folder_path: String) -> Project`
 - `close_project(project_id: i64)`
@@ -45,11 +47,13 @@ Leptos v0.7 web interface for Attractor workspace IDE. Renders project sidebar, 
 - `start_execution(project_id: i64) -> ExecutionResponse` (returns `session_id`, `epic_id`, `pipeline_path`)
 
 **HTTP Endpoints** (`main.rs`):
+
 - `GET /api/terminal/ws` — WebSocket PTY upgrade
 - `GET /api/documents/stream?project_id={id}` — SSE document updates
 - `GET /api/stream/{session_id}` — SSE pipeline execution events
 
 **Shared State** (`server/mod.rs`):
+
 - `db: SqlitePool`
 - `watchers: Arc<Mutex<HashMap<i64, Arc<DocumentWatcher>>>>`
 - `terminal_sessions: TerminalSessions`
@@ -77,41 +81,58 @@ Leptos v0.7 web interface for Attractor workspace IDE. Renders project sidebar, 
 ## Behavioral Contracts
 
 **CSS Class Patterns**:
+
 - Workspace layout: `.app-workspace`, `.workspace-content`, `.empty-state`, `.project-view-wrapper`
 - Terminal container ID format: `"terminal-{project_id}"`
-- Color tokens: `$primary: #89b4fa`, `$success: #a6e3a1`, `$error: #f38ba8`, `$base: #1e1e2e`, `$mantle: #181825`
+- Color tokens: `$base: #1e1e2e`, `$mantle: #181825`, `$crust: #11111b`, `$text: #cdd6f4`, `$subtext: #a6adc8`, `$primary: #89b4fa`, `$primary-hover: #74a8f7`, `$success: #a6e3a1`, `$error: #f38ba8`, `$warning: #f9e2af`, `$surface0: #313244`, `$surface1: #45475a`, `$surface2: #585b70`, `$overlay: #6c7086`
 - Execution node states: `.in-progress` (pulsing), `.success`, `.failed`, `.skipped` (opacity 0.5)
-- Layout constants: `$radius: 8px`, `$radius-sm: 4px`, sidebar width 220px, responsive breakpoint `@media (min-width: 1800px)`
+- Layout constants: `$radius: 8px`, `$radius-sm: 4px`, sidebar width 220px, responsive breakpoint `@media (min-width: 1800px)`, grid default `1fr 1fr`, grid wide mode `1fr 1fr 1fr`, modal width 600px, directory list max-height 300px
+- Class name patterns: state modifiers `.active`, `.in-progress`, `.success`, `.failed`, `.skipped`; variant prefixes `.btn-*`, `.badge-*`, `.panel-*`, `.doc-*`; container suffixes `-wrapper`, `-container`, `-content`, `-header`, `-overlay`, `-modal`
+- Animations: `spin` (0.8s linear infinite for 14px spinner), `pulse` (1.5s ease-in-out infinite for status indicators)
+- Z-index layers: `.folder-picker-overlay` 100
 
 **URL Patterns**:
+
 - Terminal WebSocket: `/api/terminal/ws`
 - Documents SSE: `/api/documents/stream?project_id={}`
 - Pipeline SSE: `/api/stream/{session_id}`
 
 **Panic Strings** (`main.rs`):
+
 - Database initialization failure: `"Failed to initialize database"`
 - Address bind conflict: `"Failed to bind to {addr}: {e}. Is another instance already running?"`
 
-**Terminal Wire Protocol** (`server/terminal.rs`):
+**Terminal Wire Protocol** (`server/terminal.rs` and `public/js/xterm-setup.js`):
+
 - Session initialization: `{"type":"session","session_id":"<uuid>"}`
 - Resize command: `{"type":"resize","cols":N,"rows":N}`
-- Binary frames for PTY I/O
+- Binary frames for PTY I/O with `ws.binaryType = 'arraybuffer'`
 - Idle timeout: `Duration::from_secs(30 * 60)` (30 minutes)
+- WebSocket URL construction: `wss://` or `ws://` + `window.location.host` + `/api/terminal/ws?session=${sessionId}&folder=${folderPath}`
+- Session storage key pattern: `'terminal_session_' + containerId`
+- Reconnect delay constant: `RECONNECT_DELAY = 1000`
+- Reconnect indicator ANSI sequence: `\r\n\x1b[33m[Reconnecting...]\x1b[0m\r\n`
+- Client-side instance registry: `window._terminalInstances` maps container IDs to `{ws, terminal, fitAddon, resizeObserver, reconnectTimer}`
 
 **xterm.js Integration**:
+
 - CDN URL: `https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css`
 - Initialization delay: 50ms `setTimeout` in `components/terminal.rs`
+- Terminal theme (Catppuccin Mocha): background `#1e1e2e`, foreground `#cdd6f4`, cursor `#f5e0dc`, selectionBackground `#585b70`, ANSI black `#45475a`, red `#f38ba8`, green `#a6e3a1`, yellow `#f9e2af`, blue `#89b4fa`, magenta `#f5c2e7`, cyan `#94e2d5`, white `#bac2de` plus bright variants
 
 **Database Schema Defaults** (`server/db.rs`):
+
 - Timestamp default: `datetime('now')` for `last_used`, `created_at`, `updated_at`
 - Unique constraint: `folder_path TEXT NOT NULL UNIQUE`
 
 **Execution Event Schemas** (`server/execute.rs`):
+
 - Start: `{"type": "node_start", "node_id": "...", "label": "..."}`
 - Complete: `{"type": "node_complete", "node_id": "...", "status": "...", "cost_usd": ..., "notes": "..."}`
 - Pipeline End: `{"type": "pipeline_complete", "total_cost_usd": ..., "completed_nodes": [...]}`
 
 **Status String Mappings**:
+
 - `Success` → `"success"`
 - `PartialSuccess` → `"partial_success"`
 - `Retry` → `"retry"`
@@ -119,11 +140,14 @@ Leptos v0.7 web interface for Attractor workspace IDE. Renders project sidebar, 
 - `Skipped` → `"skipped"`
 
 **Auto-Selection Logic** (`app.rs`):
+
 - On `load_action` resolution: `if let Some(first) = loaded.first() { active_project_id.set(Some(first.id)); }`
 
 **Hidden File Filter** (`server/projects.rs`):
+
 - Excludes entries where `name_str.starts_with('.')`
 - Injects parent entry `".."` when `dir_path.parent().is_some()`
 
 **Annex References**:
+
 - Template header content: [src/server/projects.annex.sum](./src/server/projects.annex.sum)

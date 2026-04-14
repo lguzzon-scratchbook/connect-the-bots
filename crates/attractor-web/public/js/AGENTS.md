@@ -6,16 +6,19 @@ Browser-side terminal initialization for Attractor web UI. Bridges xterm.js to W
 
 ## Contents
 
-[xterm-setup.js](./xterm-setup.js) exports `window.initTerminal`, `window.disposeTerminal`. Constructs xterm.js Terminal with FitAddon, WebLinksAddon. Handles WebSocket `ws`, `sessionStorage` keys, `reconnectTimer`, `ResizeObserver` lifecycle.
+[xterm-setup.js](./xterm-setup.js) exports `window.initTerminal`, `window.disposeTerminal`. Uses `buildWsUrl`, `connect`, `getSessionId`, `setSessionId` internally. Manages `window._terminalInstances` registry with `ws`, `terminal`, `fitAddon`, `resizeObserver`, `reconnectTimer`.
 
 ## Behavioral Contracts
 
 - WebSocket URL: `wss://` or `ws://` + `window.location.host` + `/api/terminal/ws?session=${sessionId}&folder=${folderPath}`
+- `buildWsUrl()` constructs URL with scheme `wss://` or `ws://`, host `window.location.host`, path `/api/terminal/ws`, query params `session` and `folder`
 - `RECONNECT_DELAY = 1000`
 - Session storage key pattern: `'terminal_session_' + containerId`
 - Reconnect indicator ANSI sequence: `\r\n\x1b[33m[Reconnecting...]\x1b[0m\r\n`
 - Binary type: `ws.binaryType = 'arraybuffer'`
 - Resize message format: JSON `{type: 'resize', cols, rows}`
+- Data input: `terminal.onData` transmits `TextEncoder` encoded bytes
+- Session handshake: `ws.onmessage` parses JSON `{type: 'session'}`, extracts `msg.session_id`
 - Terminal theme (Catppuccin Mocha):
   - `background: '#1e1e2e'`
   - `foreground: '#cdd6f4'`

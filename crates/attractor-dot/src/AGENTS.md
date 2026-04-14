@@ -21,10 +21,12 @@ Source directory for `attractor-dot` crate. Implements winnow-based parser for s
 ## Behavioral Contracts
 
 **Duration Formats**
+
 - Serialization template: `{}ms` (milliseconds only)
 - Parsing suffixes: `ms` (×1), `s` (×1), `m` (×60), `h` (×3600), `d` (×86400)
 
 **Type Parsing Patterns**
+
 - Identifier: `[A-Za-z_][A-Za-z0-9_]*`
 - Qualified ID: `identifier ( '.' identifier )+`
 - Float: `(opt(alt(('-', '+'))), digit1, '.', digit1)`
@@ -34,6 +36,7 @@ Source directory for `attractor-dot` crate. Implements winnow-based parser for s
 Quoted strings matching duration syntax (e.g., `"20m"`, `"500ms"`) parse as `AttributeValue::String`, not `AttributeValue::Duration`. Downstream must explicitly invoke `parse_duration_str` for conversion.
 
 **Error Messages**
+
 - `strict` prefix rejected: `'digraph' keyword (strict graphs are not supported)`
 - Undirected `graph` rejected: `'digraph' keyword (undirected graphs are not supported)`
 - `--` operator rejected: `only directed edges (->); undirected edges (--) are not supported`

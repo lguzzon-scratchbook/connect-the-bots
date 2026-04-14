@@ -12,17 +12,21 @@ Installs sccache and mold. Sets `RUSTC_WRAPPER=sccache` and `SCCACHE_CACHE_SIZE=
 ## Behavioral Contracts
 
 **Environment Variables**
+
 - `RUSTC_WRAPPER=sccache`: Set in detected profile
 - `SCCACHE_CACHE_SIZE=10G`: 10GB cache limit
 
 **Install Commands**
+
 - `cargo install sccache --locked`: Installs sccache compiler cache
 - `apt-get install mold`: Installs mold linker (Linux with apt-get only)
 
 **Idempotency Checks**
+
 - `command -v sccache`: Skips cargo install if binary present
 - `command -v mold`: Skips apt-get install if linker present
 
 **Target Profiles**
+
 - `.bashrc`: Bash shell configuration file
 - `.zshrc`: Zsh shell configuration file

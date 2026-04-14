@@ -2,29 +2,29 @@
 
 @AGENTS.local.md
 
+@AGENTS.local.md
+
 # PAS
 
 PAS workspace defines DOT-based AI pipeline orchestration. 8-crate Rust monorepo executes Graphviz digraphs via `pas` CLI, managing LLM agent loops, checkpoint/resume state, and multi-provider API abstractions.
 
 ## Stack
 
-Cargo.toml defines workspace. 8 crates: `attractor-types` (shared errors/context), `attractor-dot` (DOT parser), `attractor-llm` (OpenAI/Anthropic/Gemini clients), `attractor-tools` (trait/registry), `attractor-agent` (steering loops), `attractor-pipeline` (graph engine/handlers/validation), `attractor-cli` (binary), `attractor-web` (Leptos frontend). 
+Cargo.toml defines workspace. 8 crates: `attractor-types` (shared errors/context), `attractor-dot` (DOT parser), `attractor-llm` (OpenAI/Anthropic/Gemini clients), `attractor-tools` (trait/registry), `attractor-agent` (steering loops), `attractor-pipeline` (graph engine/handlers/validation), `attractor-cli` (binary), `attractor-web` (Leptos frontend).
 Deps: tokio="1", serde="1", reqwest="0.12", clap="4", tracing="0.1", uuid="1", anyhow="1", thiserror="2".
 License: MIT OR Apache-2.0. Version 0.6.0 unified in root.
 
 ## Subdirectories
 
-[crates/](./crates/) — Workspace members. 8 crates split by domain: types, parser, LLM clients, tools registry, agent logic, pipeline engine, CLI binary, web UI.
-[docs/](./docs/) — Architecture specs (C4 models), CLI reference, user guide, verification layers.
-[pipelines/](./pipelines/) — DOT workflow definitions (attractor-*.dot files). Executable state machines for epic task processing.
-[scripts/](./scripts/) — Build automation. `setup-fast-builds.sh` configures sccache/mold.
-[templates/](./templates/) — DOT templates (epic-runner.dot, plan-to-execute.dot) and markdown schemas (prd-template.md, spec-template.md).
-[.vscode/](./.vscode/) — IDE settings. Hides *.sum files.
+[crates/](./crates/) — Workspace members. `attractor-web` implements Leptos SSR/hydrate frontend. 8 crates: `attractor-types`, `attractor-dot`, `attractor-llm`, `attractor-tools`, `attractor-agent`, `attractor-pipeline`, `attractor-cli`, `attractor-web`.
+[docs/](./docs/) — Architecture specifications (C4 models, distributed execution flows, verification layers), CLI reference, user guides.
+[templates/](./templates/) — DOT workflow definitions (`epic-runner.dot`, `plan-to-execute.dot`) and markdown schema templates (`prd-template.md`, `spec-template.md`).
+[.vscode/](./.vscode/) — Visual Studio Code settings. Configures `files.exclude` pattern `**/*.sum` to hide checksum files from Explorer view.
 
 ## Contents
 
-[Cargo.toml](./Cargo.toml) — Workspace manifest. Defines members, shared deps, release profiles (lto=thin, codegen-units=16).
-[install.sh](./install.sh) — Build installer. Compiles `attractor-cli` to `~/.local/bin/pas`. Supports `--fast` flag for quick-release profile.
+[Cargo.toml](./Cargo.toml) — Workspace manifest. Defines members, shared deps, release profiles (`lto=thin`, `codegen-units=16`).
+[install.sh](./install.sh) — Builds `pas` binary via `cargo build -p attractor-cli`, installs to `${HOME}/.local/bin/pas`. Supports `--fast` flag, `PAS_PROFILE` env override, and macOS `codesign` via `CODESIGN_IDENTITY`.
 [README.md](./README.md) — Project overview. CLI commands (`run`, `validate`, `info`, `plan`, `decompose`, `generate`, `scaffold`), architecture, node attributes.
 [LICENSE-APACHE](./LICENSE-APACHE) — Apache-2.0 license text.
 [LICENSE-MIT](./LICENSE-MIT) — MIT license text.
@@ -42,14 +42,16 @@ Pipeline execution spans 3 tiers:
 ## Behavioral Contracts
 
 **DOT Node Shapes**
+
 - `Mdiamond` → StartHandler (exactly one required)
-- `Msquare` → ExitHandler + goal gate (exactly one required)  
+- `Msquare` → ExitHandler + goal gate (exactly one required)
 - `box` → CodergenHandler (LLM execution, requires `prompt` attribute)
 - `diamond` → ConditionalHandler (routes via response label scan)
 - `parallelogram` → ToolHandler (shell via `tool_command`)
 - `hexagon` → WaitHumanHandler (human `preferred_label` gate)
 
 **Edge Selection Priority**
+
 1. `condition` expression match (highest `weight`, lexical tiebreak)
 2. `preferred_label` match (case-insensitive, strips `&` prefix)
 3. `suggested_next_ids` contains target ID
@@ -62,8 +64,9 @@ Warnings: `FidelityValidRule` (full|truncate|compact|summary), `RetryTargetExist
 
 **Response Tokens (verbatim)**
 Conditional nodes emit final-line tokens:
+
 - `MORE` — Tasks remain, continue workflow
-- `DONE` — No tasks remain, exit to done node  
+- `DONE` — No tasks remain, exit to done node
 - `PASS` — Verification succeeded
 - `FAIL` — Verification failed, route to fixup
 
@@ -71,6 +74,7 @@ Conditional nodes emit final-line tokens:
 `${ctx.key}` expands to graph attributes or prior node results (`{node_id}.result`) inside `prompt` strings.
 
 **State File Paths**
+
 - `.pas/current_task.md` — Active task ID
 - `.pas/investigation.md` — Analysis output
 - `.pas/test-results.md` — Validation results
@@ -90,22 +94,28 @@ Conditional nodes emit final-line tokens:
 - Default max steps: `200`
 - Timeout tiers: Trivial `120s`, Light `300s`, Standard `600s`, Heavy `900s`, Intensive `1200s`
 - Full epic-runner prompts: [templates/epic-runner.annex.sum](./templates/epic-runner.annex.sum)
+- Full plan-to-execute prompts: [templates/plan-to-execute.annex.sum](./templates/plan-to-execute.annex.sum)
 
 ## Workflow & Conventions
 
-**Build Commands**
+**Build & Test**
+
 ```bash
-cargo build --release          # Build CLI binary
+cargo build --release          # Build CLI binary `pas`
 cargo test                     # Run all tests
 cargo test -p attractor-dot    # Test single crate
 cargo clippy --workspace       # Lint
 cargo fmt --all -- --check     # Format check
 ```
 
+Install via `./install.sh` or `cargo install --path crates/attractor-cli`.
+
 **Versioning**
-Single version in workspace root `Cargo.toml` under `[workspace.package]`. All crates inherit via `version.workspace = true`. Never set versions in crate manifests. Bump only in root, then run `cargo check`.
+Single version in workspace root `Cargo.toml` under `[workspace.package]`. All crates inherit via `version.workspace = true`. **Never set versions directly in individual crates.** Bump only in root, then run `cargo check`.
 
 **Key Constraints**
-- `codergen` handler shells out to local `claude` CLI. Requires Claude Code installed. No API key needed.
-- Direct LLM handlers (OpenAI/Anthropic/Gemini) require `*_API_KEY` env vars.
+
+- Default `codergen` handler shells out to local `claude` CLI. Requires Claude Code installed. No API key needed.
+- Direct LLM handlers (OpenAI/Anthropic/Gemini) require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` env vars.
+- Pipeline files use DOT (Graphviz digraph) syntax per `docs/guide.md`.
 - Integration tests located in `crates/attractor-pipeline/tests/integration.rs`.

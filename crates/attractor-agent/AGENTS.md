@@ -7,20 +7,25 @@ Autonomous coding agent implementation coordinating LLM inference with tool exec
 ## Contents
 
 ### Core Session
+
 - [Cargo.toml](./Cargo.toml): Package manifest declaring dependencies on `attractor-llm`, `attractor-tools`, `attractor-types`, `serde`, `tokio`, `uuid`.
 - [src/lib.rs](./src/lib.rs): `AgentSession` orchestrator exposing `process_input`, `build_request`, `execute_tool_calls`; defines `SessionConfig`, `SessionState`, `Turn` enum, `MAX_TOOL_OUTPUT_LEN`.
 
 ### Conversation Controls
+
 - [src/fidelity.rs](./src/fidelity.rs): `FidelityMode` enum (`Full`, `Truncate`, `Compact`, `Summary`) and `apply_fidelity` processor for history truncation strategies.
 - [src/loop_detection.rs](./src/loop_detection.rs): `LoopDetector` sliding window detection (`window_size`, `recent_calls`) and `SteeringInjector` corrective message generation.
 
 ### Prompt System
+
 - [src/prompt_builder.rs](./src/prompt_builder.rs): `SystemPromptBuilder` priority-based assembler (priorities 0-5) with `with_base`, `with_goal`, `with_tools`, `build`; `discover_project_docs` searches candidate files; `ProjectDoc` struct.
 
 ### Subagent Management
+
 - [src/subagent.rs](./src/subagent.rs): `SubagentManager` registry with `register` (yields `subagent-N` IDs), `update_status`, `running_agents`; `SubagentConfig` spawn parameters; `SubagentStatus` lifecycle enum.
 
 ### Testing
+
 - [src/test_utils.rs](./src/test_utils.rs): `MockEnv` stub implementing `ExecutionEnvironment`; `SequenceMockProvider` mock `ProviderAdapter`; `EchoTool` test `Tool` implementation; `make_client` helper constructing `attractor_llm::LlmClient`.
 
 ## Architecture / Data Flow
@@ -52,6 +57,7 @@ Autonomous coding agent implementation coordinating LLM inference with tool exec
 **Loop Detection Signatures**: Format `"{}:{}"` concatenating `tool_name` and `u64` hash from `DefaultHasher::write(args.to_string().as_bytes())`. Detection triggers when `recent_calls.len() >= window_size` and all elements equal first signature.
 
 **Steering Message Templates**:
+
 - Loop warning: `"WARNING: You have called the '{}' tool {} times in a row with the same arguments. This appears to be a loop. Please try a different approach or tool."`
 - Refocus: `"Please refocus on the current goal: {}. Consider what steps are still needed and take a different approach."`
 

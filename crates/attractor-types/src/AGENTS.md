@@ -23,6 +23,7 @@ Public exports define contract for entire workspace:
 ## Behavioral Contracts
 
 **Error Display Patterns** (verbatim from `AttractorError` thiserror attributes):
+
 - `ProviderError { provider, status, message, .. }`: "`Provider {provider} returned HTTP {status}: {message}`"
 - `RateLimited { provider, retry_after_ms }`: "`Rate limited by {provider}, retry after {retry_after_ms}ms`"
 - `AuthError { provider }`: "`Authentication failed for provider {provider}`"
@@ -41,11 +42,13 @@ Public exports define contract for entire workspace:
 - `TurnLimitReached { turns }`: "`Turn limit reached: {turns} turns`"
 
 **Error Classification Logic**:
+
 - `is_retryable()` returns `true` for: `RateLimited`, `CommandTimeout`, `ProviderError` with `retryable: true`.
 - `is_terminal()` returns `true` for: `AuthError`, `ValidationError`, `ContextLengthExceeded`, `CliNotFound`.
 - `http_status()` maps: `RateLimited`→429, `AuthError`→401, `ProviderError`→status field, `RequestTimeout`/`CommandTimeout`→504, `ValidationError`→400, `ContextLengthExceeded`→413.
 
 **Serialization**:
+
 - `StageStatus` and `FidelityMode` use serde `rename_all = "snake_case"`.
 - `Checkpoint.save()` uses `serde_json::to_string_pretty`.
 

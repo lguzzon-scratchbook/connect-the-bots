@@ -13,6 +13,7 @@ Example DOT orchestration graphs. Demonstrates EpicRunner state machine implemen
 **Response Tokens** — LLM outputs must terminate with exactly: `MORE`, `DONE`, `PASS`, `FAIL`.
 
 **State Files** — Runtime persists:
+
 - `.pas/current_task.md` (active task ID, written by pick_task)
 - `.pas/investigation.md` (codebase analysis, written by investigate)
 - `.pas/test-results.md` (test output, written by run_tests)
@@ -26,6 +27,7 @@ Example DOT orchestration graphs. Demonstrates EpicRunner state machine implemen
 ## Reproduction-Critical Constants
 
 Full prompt templates for all 8 nodes stored in annex file:
+
 - [epic-runner.annex.sum](./epic-runner.annex.sum)
 
 ## File Relationships

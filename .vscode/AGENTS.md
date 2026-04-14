@@ -2,7 +2,7 @@
 
 # .vscode
 
-Configures Visual Studio Code workspace settings for the Attractor monorepo. Contains IDE-specific preferences controlling file visibility and editor behavior.
+Configures Visual Studio Code workspace settings for Attractor monorepo. Contains IDE-specific preferences controlling file visibility, editor behavior.
 
 ## Contents
 

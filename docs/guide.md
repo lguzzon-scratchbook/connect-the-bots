@@ -108,14 +108,14 @@ digraph PipelineName {
 
 ### Graph attributes
 
-| Attribute | Purpose |
-|-----------|---------|
-| `label` | Pipeline display name |
-| `goal` | Objective description — injected into every node's context |
-| `model` | Default LLM model for all nodes (e.g. `"sonnet"`, `"haiku"`, `"opus"`) |
-| `retry_target` | Global fallback retry target for goal gates |
-| `fallback_retry_target` | Second-level global fallback |
-| `stylesheet` | Inline CSS-like rules (see [Stylesheets](#stylesheets)) |
+| Attribute               | Purpose                                                                |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `label`                 | Pipeline display name                                                  |
+| `goal`                  | Objective description — injected into every node's context             |
+| `model`                 | Default LLM model for all nodes (e.g. `"sonnet"`, `"haiku"`, `"opus"`) |
+| `retry_target`          | Global fallback retry target for goal gates                            |
+| `fallback_retry_target` | Second-level global fallback                                           |
+| `stylesheet`            | Inline CSS-like rules (see [Stylesheets](#stylesheets))                |
 
 ---
 
@@ -123,36 +123,36 @@ digraph PipelineName {
 
 ### Node shapes
 
-| Shape | Role | Handler |
-|-------|------|---------|
-| `Mdiamond` | **Start node.** Entry point. Exactly one required. | StartHandler (instant) |
-| `Msquare` | **Exit node.** Pipeline completion. Exactly one required. | ExitHandler (instant) |
-| `box` | **Task node.** Runs Claude Code with the `prompt`. | CodergenHandler |
-| `diamond` | **Conditional node.** Claude's response picks the outgoing edge. | ConditionalHandler + CodergenHandler |
-| `hexagon` | **Human gate.** Pauses for human input/approval. | WaitHumanHandler |
-| `parallelogram` | **Tool node.** Runs a shell command. | ToolHandler |
+| Shape           | Role                                                             | Handler                              |
+| --------------- | ---------------------------------------------------------------- | ------------------------------------ |
+| `Mdiamond`      | **Start node.** Entry point. Exactly one required.               | StartHandler (instant)               |
+| `Msquare`       | **Exit node.** Pipeline completion. Exactly one required.        | ExitHandler (instant)                |
+| `box`           | **Task node.** Runs Claude Code with the `prompt`.               | CodergenHandler                      |
+| `diamond`       | **Conditional node.** Claude's response picks the outgoing edge. | ConditionalHandler + CodergenHandler |
+| `hexagon`       | **Human gate.** Pauses for human input/approval.                 | WaitHumanHandler                     |
+| `parallelogram` | **Tool node.** Runs a shell command.                             | ToolHandler                          |
 
 ### Node attributes
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `label` | string | node ID | Display name shown in logs |
-| `prompt` | string | — | **The task sent to Claude Code.** Required for `box` and `diamond` nodes. |
-| `node_type` | string | auto | Explicit handler type override (`"conditional"`, `"tool"`, `"parallel"`, `"fan_in"`, `"manager"`) |
-| `llm_model` | string | graph `model` | Model override for this node (`"haiku"`, `"sonnet"`, `"opus"`, or full model ID) |
-| `llm_provider` | string | `"claude"` | CLI provider for this node: `"claude"`, `"codex"`, or `"gemini"` |
-| `allowed_tools` | string | all | Comma-separated Claude Code tool list (`"Read,Grep,Glob"` for read-only) |
-| `max_budget_usd` | string | unlimited | Maximum spend for this node's Claude Code session |
-| `goal_gate` | boolean | false | If true, this node must succeed for the pipeline to complete |
-| `retry_target` | string | — | Node ID to loop back to if this goal gate fails |
-| `fallback_retry_target` | string | — | Second-level retry target |
-| `max_retries` | integer | 0 | Maximum retry attempts for this node |
-| `timeout` | duration | — | Max execution time (e.g. `"5m"`, `"1h30m"`) |
-| `fidelity` | string | — | Context fidelity mode: `"full"`, `"truncate"`, `"compact"`, `"summary"` |
-| `classes` | string | — | Space-separated class list for stylesheet matching |
-| `tool_command` | string | — | Shell command for `parallelogram` (tool) nodes |
-| `auto_status` | boolean | true | Automatically set status from outcome |
-| `allow_partial` | boolean | false | Allow partial success |
+| Attribute               | Type     | Default       | Description                                                                                       |
+| ----------------------- | -------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `label`                 | string   | node ID       | Display name shown in logs                                                                        |
+| `prompt`                | string   | —             | **The task sent to Claude Code.** Required for `box` and `diamond` nodes.                         |
+| `node_type`             | string   | auto          | Explicit handler type override (`"conditional"`, `"tool"`, `"parallel"`, `"fan_in"`, `"manager"`) |
+| `llm_model`             | string   | graph `model` | Model override for this node (`"haiku"`, `"sonnet"`, `"opus"`, or full model ID)                  |
+| `llm_provider`          | string   | `"claude"`    | CLI provider for this node: `"claude"`, `"codex"`, or `"gemini"`                                  |
+| `allowed_tools`         | string   | all           | Comma-separated Claude Code tool list (`"Read,Grep,Glob"` for read-only)                          |
+| `max_budget_usd`        | string   | unlimited     | Maximum spend for this node's Claude Code session                                                 |
+| `goal_gate`             | boolean  | false         | If true, this node must succeed for the pipeline to complete                                      |
+| `retry_target`          | string   | —             | Node ID to loop back to if this goal gate fails                                                   |
+| `fallback_retry_target` | string   | —             | Second-level retry target                                                                         |
+| `max_retries`           | integer  | 0             | Maximum retry attempts for this node                                                              |
+| `timeout`               | duration | —             | Max execution time (e.g. `"5m"`, `"1h30m"`)                                                       |
+| `fidelity`              | string   | —             | Context fidelity mode: `"full"`, `"truncate"`, `"compact"`, `"summary"`                           |
+| `classes`               | string   | —             | Space-separated class list for stylesheet matching                                                |
+| `tool_command`          | string   | —             | Shell command for `parallelogram` (tool) nodes                                                    |
+| `auto_status`           | boolean  | true          | Automatically set status from outcome                                                             |
+| `allow_partial`         | boolean  | false         | Allow partial success                                                                             |
 
 ### Tool nodes (parallelogram)
 
@@ -183,13 +183,13 @@ nodeA -> nodeB [weight=10]               // Weighted (higher = preferred)
 
 ### Edge attributes
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `label` | string | — | Display label (also used for preferred_label matching) |
-| `condition` | string | — | Condition expression that must be true for this edge |
-| `weight` | integer | 0 | Higher weight = preferred when multiple edges match |
-| `loop_restart` | boolean | false | If true, clears completed nodes and outcomes (for loops) |
-| `fidelity` | string | — | Override fidelity when traversing this edge |
+| Attribute      | Type    | Default | Description                                              |
+| -------------- | ------- | ------- | -------------------------------------------------------- |
+| `label`        | string  | —       | Display label (also used for preferred_label matching)   |
+| `condition`    | string  | —       | Condition expression that must be true for this edge     |
+| `weight`       | integer | 0       | Higher weight = preferred when multiple edges match      |
+| `loop_restart` | boolean | false   | If true, clears completed nodes and outcomes (for loops) |
+| `fidelity`     | string  | —       | Override fidelity when traversing this edge              |
 
 ### Chained edges
 
@@ -248,6 +248,7 @@ preferred_label=BUY          // Check the extracted label
 ```
 
 Available context keys in conditions:
+
 - `outcome` — the node's status: `success`, `fail`, `partial_success`, `retry`, `skipped`
 - `preferred_label` — the label extracted from Claude's response
 
@@ -270,6 +271,7 @@ final_review [
 ```
 
 If `final_review` fails:
+
 1. The pipeline loops back to `implement` and re-executes from there
 2. On the second pass, if `final_review` succeeds, the pipeline exits normally
 
@@ -325,20 +327,20 @@ digraph Pipeline {
 
 ### Selectors
 
-| Selector | Specificity | Matches |
-|----------|-------------|---------|
-| `*` | 0 | Every node |
-| `.classname` | 1 | Nodes with `classes="classname"` |
-| `#node_id` | 2 | Node with matching ID |
+| Selector     | Specificity | Matches                          |
+| ------------ | ----------- | -------------------------------- |
+| `*`          | 0           | Every node                       |
+| `.classname` | 1           | Nodes with `classes="classname"` |
+| `#node_id`   | 2           | Node with matching ID            |
 
 Higher specificity wins. Explicit node attributes always override stylesheet values.
 
 ### Supported properties
 
-| Property | Maps to |
-|----------|---------|
-| `llm_model` | `llm_model` node attribute |
-| `llm_provider` | `llm_provider` node attribute |
+| Property           | Maps to                           |
+| ------------------ | --------------------------------- |
+| `llm_model`        | `llm_model` node attribute        |
+| `llm_provider`     | `llm_provider` node attribute     |
 | `reasoning_effort` | `reasoning_effort` node attribute |
 
 ### Example with classes
@@ -388,20 +390,20 @@ Graph attributes are available as `${ctx.attribute_name}`. Context values set by
 
 Run `pas validate pipeline.dot` to check your pipeline. The validator runs 12 lint rules:
 
-| Rule | Severity | What it checks |
-|------|----------|----------------|
-| StartNodeRule | Error | Exactly one `Mdiamond` node exists |
-| TerminalNodeRule | Error | At least one `Msquare` node exists |
-| ReachabilityRule | Error | All nodes are reachable from start |
-| EdgeTargetExistsRule | Error | All edge targets reference existing nodes |
-| StartNoIncomingRule | Error | Start node has no incoming edges |
-| ExitNoOutgoingRule | Error | Exit node has no outgoing edges |
-| ConditionSyntaxRule | Error | All condition expressions parse correctly |
-| FidelityValidRule | Warning | Fidelity values are one of: full, truncate, compact, summary |
-| RetryTargetExistsRule | Warning | Retry targets reference existing nodes |
-| GoalGateHasRetryRule | Warning | Goal gate nodes have a retry target defined |
-| ProviderValidRule | Warning | `llm_provider` values are one of: claude, codex, gemini |
-| PromptOnLlmNodesRule | Warning | Box/diamond nodes have a `prompt` attribute |
+| Rule                  | Severity | What it checks                                               |
+| --------------------- | -------- | ------------------------------------------------------------ |
+| StartNodeRule         | Error    | Exactly one `Mdiamond` node exists                           |
+| TerminalNodeRule      | Error    | At least one `Msquare` node exists                           |
+| ReachabilityRule      | Error    | All nodes are reachable from start                           |
+| EdgeTargetExistsRule  | Error    | All edge targets reference existing nodes                    |
+| StartNoIncomingRule   | Error    | Start node has no incoming edges                             |
+| ExitNoOutgoingRule    | Error    | Exit node has no outgoing edges                              |
+| ConditionSyntaxRule   | Error    | All condition expressions parse correctly                    |
+| FidelityValidRule     | Warning  | Fidelity values are one of: full, truncate, compact, summary |
+| RetryTargetExistsRule | Warning  | Retry targets reference existing nodes                       |
+| GoalGateHasRetryRule  | Warning  | Goal gate nodes have a retry target defined                  |
+| ProviderValidRule     | Warning  | `llm_provider` values are one of: claude, codex, gemini      |
+| PromptOnLlmNodesRule  | Warning  | Box/diamond nodes have a `prompt` attribute                  |
 
 Errors prevent execution. Warnings are reported but don't block.
 
@@ -572,7 +574,7 @@ PAS includes a full planning-to-execution workflow that bridges structured docum
 write PRD → review → write spec → review → decompose → scaffold → validate → execute
 ```
 
-The **PRD** captures *what and why* (goals, user stories, requirements). The **spec** captures *how* (architecture, file changes, implementation phases). The spec's phases become beads issues, which become a PAS pipeline.
+The **PRD** captures _what and why_ (goals, user stories, requirements). The **spec** captures _how_ (architecture, file changes, implementation phases). The spec's phases become beads issues, which become a PAS pipeline.
 
 ### Step 1: Generate documents
 
@@ -598,6 +600,7 @@ pas decompose .pas/spec.md
 ```
 
 This reads the spec's `## Implementation Phases` section and creates:
+
 - A beads epic for the overall feature
 - Child tasks for each phase/task
 - Dependencies between tasks based on phase ordering
@@ -626,6 +629,7 @@ pas run templates/plan-to-execute.dot -w .
 ```
 
 This pipeline:
+
 1. Generates a PRD → pauses for human review
 2. Generates a spec → pauses for human review
 3. Decomposes the spec into beads tasks
@@ -686,6 +690,7 @@ pas run pipelines/my-epic-id.dot -w .
 ```
 
 The generated pipeline follows this loop for each task:
+
 ```
 pick_task → investigate → implement → run_tests → verify → close_task → check_remaining → pick_task (loop)
 ```
@@ -802,11 +807,11 @@ By default, pipeline nodes use Claude Code CLI. You can switch individual nodes 
 
 ### Supported providers
 
-| Provider | Binary | Value |
-|----------|--------|-------|
-| Claude Code | `claude` | `"claude"` (default) |
-| OpenAI Codex | `codex` | `"codex"` |
-| Google Gemini | `gemini` | `"gemini"` |
+| Provider      | Binary   | Value                |
+| ------------- | -------- | -------------------- |
+| Claude Code   | `claude` | `"claude"` (default) |
+| OpenAI Codex  | `codex`  | `"codex"`            |
+| Google Gemini | `gemini` | `"gemini"`           |
 
 ### Per-node provider
 
@@ -916,6 +921,7 @@ Your pipeline is missing a node with `shape="Mdiamond"`.
 ### "CLI exited with..." / "CliNotFound"
 
 The provider's CLI binary isn't in your PATH, or it returned a non-zero exit code. Check:
+
 - `which claude` (or `which codex`, `which gemini`) returns a path
 - The CLI works standalone: `claude -p "hello" --output-format json`
 - If using `llm_provider`, ensure the correct CLI is installed (see [Multi-Provider Support](#multi-provider-support))
@@ -939,5 +945,6 @@ If a goal gate node keeps failing and retrying, the pipeline will loop indefinit
 ### Intermediate results are lost
 
 Node outputs are in-memory. If you need to persist them:
+
 1. Tell the node to write files: `"Write your analysis to .pas/report.md"`
 2. The CLI prints total cost but not individual node results (check `.pas/` for written files)

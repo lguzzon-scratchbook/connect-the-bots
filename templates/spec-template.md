@@ -10,6 +10,7 @@
 ## Architecture Overview
 
 [Provide a high-level architectural description of how the feature will be implemented. Include:
+
 - System components and their relationships
 - Data flow and interactions
 - Key design decisions and rationale
@@ -37,11 +38,13 @@
 [Describe what will change in this file and why]
 
 **Before:**
+
 ```
 [Current code or structure]
 ```
 
 **After:**
+
 ```
 [New code or structure]
 ```
@@ -56,11 +59,13 @@
 [Describe the modification]
 
 **Before:**
+
 ```
 [Current implementation]
 ```
 
 **After:**
+
 ```
 [New implementation]
 ```
@@ -76,6 +81,7 @@
 **Description:** [What this phase accomplishes]
 
 **Tasks:**
+
 - [ ] [T1-1] Task description with estimated scope
 - [ ] [T1-2] Subtask or related work
 - [ ] [T1-3] Complete this phase requirement
@@ -83,6 +89,7 @@
 **Dependencies:** [Other phases or tasks that must be completed first]
 
 **Acceptance Criteria:**
+
 - [Verifiable criterion for phase completion]
 - [Test or validation requirement]
 
@@ -93,6 +100,7 @@
 **Description:** [What this phase accomplishes]
 
 **Tasks:**
+
 - [ ] [T2-1] Task description
 - [ ] [T2-2] Related implementation work
 - [ ] [T2-3] Integration or testing tasks
@@ -100,6 +108,7 @@
 **Dependencies:** Phase 1 (must complete Phase 1 before starting this phase)
 
 **Acceptance Criteria:**
+
 - [Criterion for phase completion]
 - [Verification or test requirement]
 
@@ -110,6 +119,7 @@
 **Description:** [What this phase accomplishes]
 
 **Tasks:**
+
 - [ ] [T3-1] Final implementation tasks
 - [ ] [T3-2] Verification and validation
 - [ ] [T3-3] Documentation or cleanup
@@ -117,6 +127,7 @@
 **Dependencies:** Phase 2
 
 **Acceptance Criteria:**
+
 - [Final acceptance criterion]
 - [Complete implementation check]
 
@@ -128,16 +139,16 @@
 
 ### Environment Variables
 
-| Variable | Type | Required | Description |
-|----------|------|----------|-------------|
-| `VAR_NAME` | string | Yes | [What this variable controls] |
-| `ANOTHER_VAR` | integer | No | [Optional configuration, default value] |
+| Variable      | Type    | Required | Description                             |
+| ------------- | ------- | -------- | --------------------------------------- |
+| `VAR_NAME`    | string  | Yes      | [What this variable controls]           |
+| `ANOTHER_VAR` | integer | No       | [Optional configuration, default value] |
 
 ### Prerequisites
 
-| Item | Description | How to Setup |
-|------|-------------|--------------|
-| [Dependency Name] | [What it is] | [Steps to install/configure] |
+| Item              | Description                 | How to Setup                    |
+| ----------------- | --------------------------- | ------------------------------- |
+| [Dependency Name] | [What it is]                | [Steps to install/configure]    |
 | [Tool or Library] | [Purpose in implementation] | [Installation or setup command] |
 
 ---
@@ -149,6 +160,7 @@
 ### 1. Unit Tests
 
 [Describe unit tests for individual functions/modules]
+
 - Test coverage targets: [percentage or specific modules]
 - Mock dependencies: [What will be mocked]
 - Test file location: `tests/` or `src/`
@@ -156,6 +168,7 @@
 ### 2. Integration Tests
 
 [Describe integration tests for component interactions]
+
 - Component combinations to test
 - Setup and teardown requirements
 - Expected behavior verification
@@ -163,6 +176,7 @@
 ### 3. End-to-End Tests
 
 [Describe E2E tests for complete features]
+
 - User workflows to validate
 - Test data and scenarios
 - Performance or load testing if applicable
@@ -197,6 +211,7 @@
 ### Known Limitations
 
 [Document any limitations or risks in rollback:
+
 - Irreversible changes (database migrations that can't be reversed)
 - Manual intervention required
 - Data considerations during rollback]

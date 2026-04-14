@@ -26,6 +26,7 @@ Rust crate `attractor-llm`. HTTP client `reqwest`. Async runtime `tokio`. Serial
 ## API Surface
 
 Public exports from `lib.rs`:
+
 - `types::*`: `Role`, `Message`, `ContentPart`, `Request`, `Response`, `Usage`, `FinishReason`, `ToolDefinition`, `ToolCallResult`, `StreamEvent`, `ToolChoice`, `ReasoningEffort`
 - `ProviderAdapter` trait, `DynProvider` wrapper
 - `LlmClient`, `Middleware` trait, `LoggingMiddleware`, `CostTrackingMiddleware`, `ModelCatalog`, `ModelInfo`
@@ -36,52 +37,62 @@ Constructor patterns: `AnthropicAdapter::new(api_key)`, `from_env()` requiring `
 ## Behavioral Contracts
 
 **Endpoint Templates**
+
 - Anthropic: `format!("{}/v1/messages", self.base_url)` with `base_url` default `"https://api.anthropic.com"`
 - OpenAI: `format!("{}/v1/responses", self.base_url)` with `base_url` default `"https://api.openai.com"`
 - Gemini: `format!("{}/models/{}:generateContent?key={}", self.base_url, model, self.api_key)` with `base_url` default `"https://generativelanguage.googleapis.com/v1beta"`
 
 **HTTP Headers**
+
 - Anthropic: `x-api-key: &self.api_key`, `anthropic-version: "2023-06-01"`, `content-type: application/json`
 - OpenAI: `Authorization: Bearer {api_key}`, `content-type: application/json`
 - Gemini: `content-type: application/json` only (API key in query string)
 
 **Environment Variables**
+
 - `ANTHROPIC_API_KEY` for `AnthropicAdapter::from_env()`
 - `OPENAI_API_KEY` for `OpenAiAdapter::from_env()`
 - `GOOGLE_API_KEY` or `GEMINI_API_KEY` for `GeminiAdapter::from_env()`
 
 **JSON Paths**
+
 - Error message extraction: `error.message` (all providers)
 - Anthropic rate limit: `error.retry_after` (seconds, multiply by 1000 for `retry_after_ms`)
 - Gemini usage: `usageMetadata.promptTokenCount`, `candidatesTokenCount`, `totalTokenCount`
 - OpenAI usage: `usage.input_tokens`, `output_tokens`, `input_tokens_details.cached_tokens`, `output_tokens_details.reasoning_tokens`
 
 **Cache Control Injection (Anthropic)**
+
 - System messages: inject `cache_control: {"type": "ephemeral"}` per block in top-level `"system"` array
 - Last user message: `is_last_user_message()` check triggers `inject_cache_control_on_last_part()` mutation
 
 **Content Markers (Gemini)**
+
 - Image with URL: `"[image: {}]"` where `{}` replaced with URL
 - Image without URL: `"[unsupported image content]"`
 - Audio/Document: `"[unsupported content type]"`
 - RedactedThinking: `"[redacted]"`
 
 **Finish Reason Mappings**
+
 - Anthropic: `"end_turn"` → `EndTurn`, `"max_tokens"` → `MaxTokens`, `"stop_sequence"` → `StopSequence`, `"tool_use"` → `ToolUse`
 - OpenAI: `"completed"` → `EndTurn` (or `ToolUse` if function_call present), `"incomplete"` → `MaxTokens`
 - Gemini: `"STOP"` → `EndTurn`, `"MAX_TOKENS"` → `MaxTokens`, `"SAFETY"` → `EndTurn`, `"STOP_SEQUENCE"` → `StopSequence`
 
 **Retryable Error Codes**
+
 - Anthropic: `500`, `529` → `retryable: true`; `400` → `retryable: false`; `429` → `RateLimited`
 - OpenAI: `500`, `502`, `503` → `retryable: true`; `400` → `retryable: false`
 - Gemini: `500`, `503` → `retryable: true`; `400` → `retryable: false`
 
 **Default Models**
+
 - Anthropic: `"claude-sonnet-4-5-20250929"`
 - OpenAI: `"gpt-4o"`
 - Gemini: `"gemini-2.5-pro"`
 
 **Context Window Sizes**
+
 - Anthropic: `200_000`
 - OpenAI: `128_000`
 - Gemini: `1_000_000`

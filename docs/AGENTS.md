@@ -2,31 +2,31 @@
 
 # docs
 
-Architecture specifications, CLI reference, and user guides for PAS pipeline execution system. Documents C4 system models, distributed execution flows connecting Leptos WASM frontend to Axum SSR backend and CLI child processes, verification layers, biological emergence patterns, and DOT-based orchestration syntax.
+Architecture specifications, CLI reference, user guides for PAS pipeline execution. Documents C4 system models, distributed execution flows connecting Leptos WASM frontend to Axum SSR backend and CLI child processes, verification layers, biological emergence patterns, DOT-based orchestration syntax.
 
 ## Contents
 
 ### Architecture Specifications
 
-[accept-execute-c4.md](./accept-execute-c4.md) — C4 model hierarchy (System Context, Container, Component) for Accept & Execute workflow. Maps Browser Client, Axum Server, Broadcast Channels, PAS CLI, Filesystem.
+[accept-execute-c4.md](./accept-execute-c4.md) — C4 model hierarchy (System Context, Container, Component) for Accept & Execute workflow. Implementation Files section maps `ApprovalBar` → `components/approval_bar.rs`, `ExecutionPanel` → `components/execution_panel.rs`, `ExecutionNode` → `components/execution_node.rs`, `start_execution()` / `pas_cli_path()` / `PipelineRunner` → `server/execute.rs`, `stream_events()` / `publish_event()` / `SESSION_STATE` → `server/stream.rs`.
 
-[accept-execute-c4-dot.md](./accept-execute-c4-dot.md) — C4 diagrams with Graphviz DOT syntax. Identical hierarchy to accept-execute-c4.md with explicit implementation file mapping.
+[accept-execute-c4-dot.md](./accept-execute-c4-dot.md) — C4 diagrams with Graphviz DOT syntax. 22-step execution sequence: Developer → ApprovalBar → `start_execution()` → Filesystem → PAS CLI (`decompose`, `scaffold`) → `PipelineRunner` → `tokio::spawn` → `ApprovalBar` → `ExecutionPanel` → `stream_events()` → SSE → `ExecutionPanel`. CLI path resolution: `PAS_CLI_PATH` environment variable. Event buffering: 100-event replay buffer.
 
-[accept-execute-flow.md](./accept-execute-flow.md) — 11-step execution sequence. Browser (`ApprovalBar`, `ExecutionPanel`) dispatches `start_execution()` server function → spawns `pas decompose` → parses `Epic ID: attractor-xxx` → spawns `pas scaffold` → parses `pipelines/<epic-id>.dot` → spawns `PipelineRunner` → SSE stream via `stream_events()`. Documents `ExecutionResponse`, `EventSource`, `node_start`/`node_complete`/`pipeline_complete` events.
+[accept-execute-flow.md](./accept-execute-flow.md) — 11-step distributed execution architecture. Browser `ApprovalBar` dispatches `start_execution()` → verifies `.pas/spec.md` → executes `pas decompose` → regex `` `^Epic ID: (attractor-[a-z0-9]+)$` `` extraction → executes `pas scaffold` → parses `pipelines/<epic-id>.dot` → `tokio::spawn` `run_pipeline_with_streaming()` → returns `ExecutionResponse` → `ExecutionPanel` mounts `EventSource` → `process_event()` handles `node_start` (InProgress), `node_complete` (Success/Failed/Skipped + cost), `pipeline_complete` (Done), `error` (termination).
 
-[web-interface-plan.md](./web-interface-plan.md) — `attractor-web` crate architecture (Leptos 0.7 + Axum 0.8). 5-phase implementation: scaffold routes, `generate_prd_spec`, streaming infrastructure with `CodergenConfig`, pipeline execution wiring, session resume. Defines SSE endpoint `/api/stream/{session_id}`, `PipelineCheckpoint` with `session_id` field.
+[web-interface-plan.md](./web-interface-plan.md) — `attractor-web` crate architecture (Leptos 0.7 + Axum 0.8). 5-phase implementation: scaffold routes, `generate_prd_spec`, streaming infrastructure with `CodergenConfig` (supporting `stream-json` mode), pipeline execution wiring, session resume. SSE endpoint `/api/stream/{session_id}`, `PipelineCheckpoint` with `session_id` field, `broadcast::Sender<PipelineEvent>` (variants `StageStarted`, `StageCompleted`, `EdgeSelected`).
 
 ### Reference Guides
 
-[cli-reference.md](./cli-reference.md) — `pas` CLI commands: `run` (execute with `--max-budget-usd`, `--max-steps`), `validate` (11 lint rules), `info` (structure display), `plan` (PRD/spec generation), `decompose` (beads epic creation), `generate` (DOT output with timeout tiers), `scaffold` (epic pipeline generation). Node attributes map to `claude -p` flags: `llm_model` → `--model`, `allowed_tools` → `--allowedTools`.
+[cli-reference.md](./cli-reference.md) — `pas` CLI commands. `run` executes DOT pipelines with `--max-budget-usd`, `--max-steps` (default 200), `--dry-run`. `validate` runs 11 lint rules. `info` displays structure. `plan --prd|--spec` generates markdown from templates. `decompose` creates beads epic from spec phases. `generate` outputs DOT with timeout tiers (Trivial 120s, Light 300s, Standard 600s, Heavy 900s, Intensive 1200s). `scaffold` generates pipeline from epic. Node attributes `llm_model`, `allowed_tools`, `max_budget_usd` map to `claude -p` flags `--model`, `--allowedTools`, `--max-budget-usd`. Exit codes: `0` success, `1` failure.
 
-[guide.md](./guide.md) — PAS User Guide. DOT syntax: shapes (`Mdiamond`=start, `Msquare`=exit+goal gate, `box`=codergen, `diamond`=conditional, `parallelogram`=tool, `hexagon`=wait.human), attributes (`prompt`, `condition`, `retry_target`, `goal_gate`, `fidelity`), edge selection 5-step priority algorithm, 12 validation rules, variable expansion `${ctx.key}`, stylesheet CSS-like selectors.
+[guide.md](./guide.md) — PAS User Guide. DOT shapes: `Mdiamond` (StartHandler), `Msquare` (ExitHandler + goal gate), `box` (CodergenHandler), `diamond` (ConditionalHandler), `parallelogram` (ToolHandler), `hexagon` (WaitHumanHandler). Attributes: `prompt`, `condition`, `retry_target`, `fallback_retry_target`, `goal_gate=true`, `fidelity` (full|truncate|compact|summary), `max_retries`. Edge selection 5-step priority: `condition` match → `preferred_label` match → `suggested_next_ids` → highest `weight` → lexical order. Variable expansion `${ctx.key}` for context. Stylesheet CSS-like selectors. 12 validation rules.
 
 ### System Analysis
 
-[emergence-analysis.md](./emergence-analysis.md) — Biological analogies for adaptive execution: nested feedback loops (exponential backoff `0.5s→1s→2s→4s`), multi-signal edge selection (condition→preferred_label→suggested_next_ids→weight→lexical), context diffusion via `Arc<RwLock<Context>>`, cost-aware self-limitation (`max_budget_usd`), checkpoint-based recovery (`PipelineCheckpoint`), structural immunity (12 lint rules).
+[emergence-analysis.md](./emergence-analysis.md) — Biological analogies for adaptive execution. Nested feedback loops: exponential backoff `0.5s → 1s → 2s → 4s` capped `30s`. Multi-signal edge selection: condition → preferred_label → suggested_next_ids → weight → lexical. Context diffusion via `Arc<RwLock<Context>>`. Cost-aware self-limitation: `max_budget_usd` default $200. Shape-driven polymorphism: DOT shapes determine handlers. Checkpoint-based recovery: `PipelineCheckpoint` persists state. Structural immunity: 12 lint rules validation.
 
-[task-verification.md](./task-verification.md) — Six-layer verification: static validation (`validate()`, 12 rules), handler dispatch (`HandlerRegistry`, `max_steps`, `max_budget_usd`), goal gates (`enforce_goal_gate()`, 4-level retry resolution), edge selection (`select_edge()`). Defines `Outcome` struct (`status: StageStatus`, `preferred_label`, `suggested_next_ids`, `context_updates`, `notes`, `failure_reason`).
+[task-verification.md](./task-verification.md) — Six-layer verification architecture. `Outcome` struct with `status: StageStatus` (Success, Fail, PartialSuccess, Retry, Skipped), `preferred_label`, `suggested_next_ids`, `context_updates`, `notes`, `failure_reason`. Static validation: `validate()`, 12 lint rules. Handler dispatch: `HandlerRegistry` with `max_steps`, `max_budget_usd` guards. Goal gates: `enforce_goal_gates()` with 4-level retry resolution (node `retry_target` → node `fallback_retry_target` → graph `retry_target` → graph `fallback_retry_target`). Edge selection: `select_edge()` priority algorithm. State observation: `Context` tracks `node_outcomes`, `cost_usd`.
 
 ## Subdirectories
 
@@ -52,7 +52,7 @@ Accept & Execute spans three tiers:
 
 `pas scaffold <EPIC_ID>` writes DOT to `pipelines/<EPIC_ID>.dot`.
 
-`pas run` invokes `claude -p` with `--output-format json`, `--no-session-persistence`, `--dangerously-skip-permissions`, plus node-derived `--model`, `--allowedTools`, `--max-budget-usd`.
+`pas run` invokes `claude -p` with `--output-format json`, `--no-session-persistence`, `--dangerously-skip-permissions`, plus node-derived `--model`, `--allowedTools`, `--max-budget-usd`. Exit codes: `0` success, `1` failure.
 
 **Event Schema**
 

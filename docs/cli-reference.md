@@ -8,9 +8,9 @@ pas [OPTIONS] <COMMAND>
 
 ## Global Options
 
-| Option | Short | Description |
-|--------|-------|-------------|
-| `--verbose` | `-v` | Enable debug-level logging. Shows detailed handler execution, edge selection decisions, and context updates. |
+| Option      | Short | Description                                                                                                  |
+| ----------- | ----- | ------------------------------------------------------------------------------------------------------------ |
+| `--verbose` | `-v`  | Enable debug-level logging. Shows detailed handler execution, edge selection decisions, and context updates. |
 
 ---
 
@@ -26,23 +26,24 @@ pas run <PIPELINE> [OPTIONS]
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `PIPELINE` | Yes | Path to the `.dot` pipeline file |
+| Argument   | Required | Description                      |
+| ---------- | -------- | -------------------------------- |
+| `PIPELINE` | Yes      | Path to the `.dot` pipeline file |
 
 #### Options
 
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--workdir <DIR>` | `-w` | current directory | Working directory for Claude Code sessions. Each node's `claude -p` runs in this directory, so file paths in prompts are relative to it. |
-| `--logs <DIR>` | `-l` | `.pas/logs` | Directory for log output. |
-| `--dry-run` | — | false | Parse and validate the pipeline without executing any nodes. No Claude Code sessions are spawned, no cost incurred. |
-| `--max-budget-usd <AMOUNT>` | — | unlimited | Maximum total spend across all nodes. Pipeline aborts with an error if exceeded. **Strongly recommended for pipelines with loops.** |
-| `--max-steps <COUNT>` | — | 200 | Maximum number of node executions before aborting. Prevents runaway loops. A 6-node pipeline that loops 3 times = 18 steps. |
+| Option                      | Short | Default           | Description                                                                                                                              |
+| --------------------------- | ----- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `--workdir <DIR>`           | `-w`  | current directory | Working directory for Claude Code sessions. Each node's `claude -p` runs in this directory, so file paths in prompts are relative to it. |
+| `--logs <DIR>`              | `-l`  | `.pas/logs`       | Directory for log output.                                                                                                                |
+| `--dry-run`                 | —     | false             | Parse and validate the pipeline without executing any nodes. No Claude Code sessions are spawned, no cost incurred.                      |
+| `--max-budget-usd <AMOUNT>` | —     | unlimited         | Maximum total spend across all nodes. Pipeline aborts with an error if exceeded. **Strongly recommended for pipelines with loops.**      |
+| `--max-steps <COUNT>`       | —     | 200               | Maximum number of node executions before aborting. Prevents runaway loops. A 6-node pipeline that loops 3 times = 18 steps.              |
 
 #### Output
 
 Prints:
+
 - Pipeline name and goal
 - Working directory (if set)
 - Per-node log lines with node ID, label, turns, cost, and error status
@@ -51,10 +52,10 @@ Prints:
 
 #### Exit codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Pipeline completed successfully |
-| 1 | Pipeline failed (validation error, handler error, or goal gate unsatisfied) |
+| Code | Meaning                                                                     |
+| ---- | --------------------------------------------------------------------------- |
+| 0    | Pipeline completed successfully                                             |
+| 1    | Pipeline failed (validation error, handler error, or goal gate unsatisfied) |
 
 ---
 
@@ -68,18 +69,20 @@ pas validate <PIPELINE>
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `PIPELINE` | Yes | Path to the `.dot` pipeline file |
+| Argument   | Required | Description                      |
+| ---------- | -------- | -------------------------------- |
+| `PIPELINE` | Yes      | Path to the `.dot` pipeline file |
 
 #### Output
 
 If valid:
+
 ```
 Pipeline is valid
 ```
 
 If issues found:
+
 ```
 [ERROR] StartNodeRule: No start node (Mdiamond) found
 [WARN] PromptOnLlmNodesRule: Node 'analyze' has no prompt attribute
@@ -87,10 +90,10 @@ If issues found:
 
 #### Exit codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | No errors (warnings are OK) |
-| 1 | One or more errors found |
+| Code | Meaning                     |
+| ---- | --------------------------- |
+| 0    | No errors (warnings are OK) |
+| 1    | One or more errors found    |
 
 ---
 
@@ -104,9 +107,9 @@ pas info <PIPELINE>
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `PIPELINE` | Yes | Path to the `.dot` pipeline file |
+| Argument   | Required | Description                      |
+| ---------- | -------- | -------------------------------- |
+| `PIPELINE` | Yes      | Path to the `.dot` pipeline file |
 
 #### Output
 
@@ -137,12 +140,12 @@ pas plan [OPTIONS]
 
 #### Options
 
-| Option | Required | Default | Description |
-|--------|----------|---------|-------------|
-| `--prd` | One of `--prd`/`--spec` | — | Generate a PRD document |
-| `--spec` | One of `--prd`/`--spec` | — | Generate a technical specification |
-| `--from-prompt <DESC>` | No | — | Use Claude to generate the document from this description instead of copying the blank template |
-| `--output <PATH>` | No | `.pas/prd.md` or `.pas/spec.md` | Output file path |
+| Option                 | Required                | Default                         | Description                                                                                     |
+| ---------------------- | ----------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `--prd`                | One of `--prd`/`--spec` | —                               | Generate a PRD document                                                                         |
+| `--spec`               | One of `--prd`/`--spec` | —                               | Generate a technical specification                                                              |
+| `--from-prompt <DESC>` | No                      | —                               | Use Claude to generate the document from this description instead of copying the blank template |
+| `--output <PATH>`      | No                      | `.pas/prd.md` or `.pas/spec.md` | Output file path                                                                                |
 
 #### Output
 
@@ -173,15 +176,15 @@ pas decompose <SPEC_PATH> [OPTIONS]
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `SPEC_PATH` | Yes | Path to the spec markdown file |
+| Argument    | Required | Description                    |
+| ----------- | -------- | ------------------------------ |
+| `SPEC_PATH` | Yes      | Path to the spec markdown file |
 
 #### Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--dry-run` | false | Print the generated `bd` commands without executing them |
+| Option      | Default | Description                                              |
+| ----------- | ------- | -------------------------------------------------------- |
+| `--dry-run` | false   | Print the generated `bd` commands without executing them |
 
 #### Output
 
@@ -213,21 +216,22 @@ pas generate <DIRECTORY>
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `FILE` | Yes | Spec file path, or PRD then spec (positional), or a directory of `*-spec.md` files |
+| Argument | Required | Description                                                                        |
+| -------- | -------- | ---------------------------------------------------------------------------------- |
+| `FILE`   | Yes      | Spec file path, or PRD then spec (positional), or a directory of `*-spec.md` files |
 
 #### Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--prd <PATH>` | — | Explicit PRD file path |
-| `--spec <PATH>` | — | Explicit spec file path |
-| `--output <PATH>` | `pipelines/<stem>.dot` | Output file path |
+| Option            | Default                | Description             |
+| ----------------- | ---------------------- | ----------------------- |
+| `--prd <PATH>`    | —                      | Explicit PRD file path  |
+| `--spec <PATH>`   | —                      | Explicit spec file path |
+| `--output <PATH>` | `pipelines/<stem>.dot` | Output file path        |
 
 #### Modes
 
 **Single-file mode:**
+
 ```bash
 pas generate my-spec.md                    # Spec only
 pas generate my-prd.md my-spec.md          # PRD + spec (positional)
@@ -235,6 +239,7 @@ pas generate --prd prd.md --spec spec.md   # PRD + spec (named)
 ```
 
 **Directory mode:**
+
 ```bash
 pas generate docs/implementation/
 ```
@@ -245,13 +250,13 @@ In directory mode, files ending in `-spec.md` are discovered and sorted lexicall
 
 Generated pipelines assign timeouts to every node based on complexity:
 
-| Tier | Timeout | Used for |
-|------|---------|----------|
-| Trivial | 120s | Conditionals, haiku routing, reading a single file |
-| Light | 300s | Linting, formatting checks, simple single-step verification |
-| Standard | 600s | Investigation, verification with iteration, fixups, most work nodes |
-| Heavy | 900s | Implementing features, writing substantial new code |
-| Intensive | 1200s | Full test suites, large refactors, multi-step builds |
+| Tier      | Timeout | Used for                                                            |
+| --------- | ------- | ------------------------------------------------------------------- |
+| Trivial   | 120s    | Conditionals, haiku routing, reading a single file                  |
+| Light     | 300s    | Linting, formatting checks, simple single-step verification         |
+| Standard  | 600s    | Investigation, verification with iteration, fixups, most work nodes |
+| Heavy     | 900s    | Implementing features, writing substantial new code                 |
+| Intensive | 1200s   | Full test suites, large refactors, multi-step builds                |
 
 #### Output
 
@@ -285,14 +290,14 @@ pas scaffold <EPIC_ID> [OPTIONS]
 
 #### Arguments
 
-| Argument | Required | Description |
-|----------|----------|-------------|
-| `EPIC_ID` | Yes | Beads epic ID (e.g., `beads-asr`) |
+| Argument  | Required | Description                       |
+| --------- | -------- | --------------------------------- |
+| `EPIC_ID` | Yes      | Beads epic ID (e.g., `beads-asr`) |
 
 #### Options
 
-| Option | Default | Description |
-|--------|---------|-------------|
+| Option            | Default                   | Description      |
+| ----------------- | ------------------------- | ---------------- |
 | `--output <PATH>` | `pipelines/<EPIC_ID>.dot` | Output file path |
 
 #### Output
@@ -380,6 +385,7 @@ pas -v run pipelines/fix-bug.dot -w .
 ```
 
 The `-v` flag enables debug logging. You'll see:
+
 - Which handler is selected for each node
 - Edge selection decisions (condition evaluation, label matching)
 - Context updates after each node
@@ -509,14 +515,15 @@ Quick way to compare node counts and structure between pipeline revisions.
 
 These are set in the `.dot` file as node attributes and passed through to each `claude -p` invocation:
 
-| Node attribute | Claude CLI flag | Effect |
-|----------------|----------------|--------|
-| `llm_model` | `--model` | Override model for this node |
-| `allowed_tools` | `--allowedTools` | Restrict available tools |
-| `max_budget_usd` | `--max-budget-usd` | Cap spending for this node |
-| Graph `model` | `--model` (fallback) | Default model when node doesn't specify one |
+| Node attribute   | Claude CLI flag      | Effect                                      |
+| ---------------- | -------------------- | ------------------------------------------- |
+| `llm_model`      | `--model`            | Override model for this node                |
+| `allowed_tools`  | `--allowedTools`     | Restrict available tools                    |
+| `max_budget_usd` | `--max-budget-usd`   | Cap spending for this node                  |
+| Graph `model`    | `--model` (fallback) | Default model when node doesn't specify one |
 
 Every node also gets:
+
 - `--output-format json` — for structured output parsing
 - `--no-session-persistence` — each node is a fresh session
 - `--dangerously-skip-permissions` — allows file edits and bash execution

@@ -1,14 +1,14 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/attractor-types",
-    "crates/attractor-dot",
-    "crates/attractor-llm",
-    "crates/attractor-tools",
-    "crates/attractor-agent",
-    "crates/attractor-pipeline",
-    "crates/attractor-cli",
-    "crates/attractor-web",
+  "crates/attractor-types",
+  "crates/attractor-dot",
+  "crates/attractor-llm",
+  "crates/attractor-tools",
+  "crates/attractor-agent",
+  "crates/attractor-pipeline",
+  "crates/attractor-cli",
+  "crates/attractor-web",
 ]
 
 [workspace.package]
@@ -23,7 +23,11 @@ thiserror = "2"
 tracing = "0.1"
 uuid = { version = "1", features = ["v4"] }
 anyhow = "1"
-reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = [
+  "json",
+  "stream",
+  "rustls-tls",
+], default-features = false }
 futures-core = "0.3"
 tokio-stream = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

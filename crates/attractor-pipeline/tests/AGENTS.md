@@ -7,6 +7,7 @@ Validate Attractor pipeline engine end-to-end. Covers DOT graph parsing, structu
 ## Contents
 
 ### Integration Test Suite
+
 - [integration.rs](./integration.rs): Linear pipelines, branching conditionals, validation errors, stylesheet overrides, context propagation, goal gate satisfaction, retry mechanisms, edge weight resolution.
 
 ## Test Fixtures
@@ -24,6 +25,7 @@ DOT shape literals: `Mdiamond` (start node), `Msquare` (exit node), `box` (proce
 DOT attribute strings: `goal_gate=true`, `retry_target="start"`, `prompt="Process data"`, `condition="outcome=success"`, `weight=1`, `class="fast"`.
 
 Stylesheet patterns:
+
 - Universal selector: `* { llm_model: default-model; llm_provider: anthropic; }`
 - Class selector: `.fast { llm_model: fast-model; }`
 - ID selector: `#summarize { llm_model: summarize-model; reasoning_effort: high; }`

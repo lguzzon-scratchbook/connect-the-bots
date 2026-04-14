@@ -19,6 +19,7 @@ DOT-defined AI agent orchestration workflows drive Attractor pipeline execution.
 
 **Response Tokens (verbatim)**
 Conditional nodes terminate with exact tokens on final output line:
+
 - `MORE` — Tasks remain, continue workflow
 - `DONE` — No tasks remain, exit to `done` node
 - `PASS` — Verification succeeded, proceed to `close_task`
@@ -26,12 +27,14 @@ Conditional nodes terminate with exact tokens on final output line:
 
 **State File Paths**
 Workflow persists intermediate state:
+
 - `.pas/current_task.md` — Active task ID from `bd ready`
 - `.pas/investigation.md` — Analysis output from `investigate` node
 - `.pas/test-results.md` — Test execution results from `run_tests` node
 
 **bd CLI Command Patterns**
 Nodes with `allowed_tools="Bash(bd:*)"` execute:
+
 - `bd show <epic-id>` — Retrieve epic structure
 - `bd ready` — List available tasks
 - `bd update <task-id> --status=in_progress` — Claim task
@@ -40,10 +43,12 @@ Nodes with `allowed_tools="Bash(bd:*)"` execute:
 
 **Git Command Patterns**
 `close_task` node executes:
+
 - `git add -A` — Stage changes
 - `git commit -m 'Description (task-id)'` — Commit with task reference
 
 **Node Configuration Attributes**
+
 - Conditional nodes: `node_type="conditional"`, `shape="diamond"`, `llm_model="haiku"`
 - Action nodes: `shape="box"`, `llm_model="sonnet"` (inherited from graph default)
 - Tools specification: `allowed_tools="Bash(bd:*),Bash(git:*),Read,Grep,Glob"`
@@ -51,6 +56,7 @@ Nodes with `allowed_tools="Bash(bd:*)"` execute:
 - Loop edges: `loop_restart="true"`
 
 **File Output Contracts**
+
 - `create_types` node → `apps/api/src/workflow/types.ts`
 - `create_migration` node → `sql/migrations/0007_eleanor_workflow_schema.sql`
 - `create_seed` node → `apps/api/src/workflow/seed.ts`

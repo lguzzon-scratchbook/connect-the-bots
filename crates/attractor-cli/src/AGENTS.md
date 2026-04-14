@@ -12,6 +12,7 @@
 ## Architecture
 
 `main()` execution flow:
+
 1. Init `tracing_subscriber` with env filter "debug" (verbose) or "info"
 2. Parse `Cli` via `clap::Parser::parse()`
 3. Match `Commands` enum:

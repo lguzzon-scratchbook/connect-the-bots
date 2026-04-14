@@ -26,7 +26,7 @@ Specialized pipeline node handlers extending base `NodeHandler` trait. Implement
 - `"stack.manager_loop"` - Sub-pipeline supervision
 - `"parallel"` - Fan-out distribution
 - `"parallel.fan_in"` - Synchronization barrier
-- `"tool"` - Shell command execution  
+- `"tool"` - Shell command execution
 - `"wait.human"` - Interactive human checkpoint
 
 ### Shape-Based Routing (from DOT graphs)
@@ -60,7 +60,7 @@ Specialized pipeline node handlers extending base `NodeHandler` trait. Implement
 
 ### Process Termination
 
-- Signal: `libc::SIGKILL` 
+- Signal: `libc::SIGKILL`
 - Target: `-(pid as i32)` negative PID signals entire process group (Unix)
 - Trigger: `tokio::time::timeout` expiry on CLI execution
 

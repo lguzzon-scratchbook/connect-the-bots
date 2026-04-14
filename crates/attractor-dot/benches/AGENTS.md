@@ -11,6 +11,7 @@ Criterion benchmark suite for `attractor_dot::parse`. Measures parser throughput
 ## Behavioral Contracts
 
 Test data generation uses format templates:
+
 - Node declaration: `node{} [shape="box",label="Node {}",max_retries="3",timeout="30s"]`
 - Edge declaration: `node{} -> node{};`
 - Subgraph cluster: `subgraph cluster_{} { inner{}_a -> inner{}_b; }`
@@ -18,6 +19,7 @@ Test data generation uses format templates:
 Benchmark `bench_parse_with_attributes` validates parsing of: `shape="Mdiamond"`, `max_retries=3`, `timeout=30s`, `goal_gate=true`, `prompt="Do work"`, `fidelity="full"`.
 
 Graph sizing parameters:
+
 - `generate_large_graph` pre-allocates `node_count * 80 + 50` bytes capacity
 - `bench_parse_large_graphs` sweeps node counts `[10, 50, 100, 200]`
 - `bench_parse_subgraphs` sweeps cluster counts `[5, 10, 20]`

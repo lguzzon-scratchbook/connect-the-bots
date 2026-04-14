@@ -10,6 +10,7 @@
 
 **The Core Mechanism:**
 Three independent feedback loops operate at different timescales simultaneously:
+
 - **Micro** (per-node): Exponential backoff retry — 0.5s → 1s → 2s → 4s, capped at 30s
 - **Meso** (per-stage): Context accumulation — each node's output enriches the prompt for the next, giving the LLM progressive memory
 - **Macro** (per-pipeline): Goal gates at the exit node — if any quality gate fails, the engine clears completed nodes and loops back to a retry target, re-executing entire pipeline sections
@@ -29,6 +30,7 @@ Add a `convergence_score` to the context that goal gates can compare across iter
 
 **The Core Mechanism:**
 Edge selection integrates five independent signals in a priority cascade:
+
 1. Condition expressions evaluated against context (`outcome=success && stage.result!=empty`)
 2. Preferred label from the handler's outcome (LLM chooses its path)
 3. Suggested next IDs from the handler
@@ -52,10 +54,13 @@ Track which edges are actually taken across pipeline runs and surface "dead edge
 
 **The Core Mechanism:**
 The `Context` is a shared `HashMap<String, Value>` behind an `Arc<RwLock>`. After each node executes:
+
 ```
 context.apply_updates(outcome.context_updates)
 ```
+
 The `CodergenHandler` then injects prior results into the next node's prompt:
+
 ```
 "Context from prior pipeline steps:
  - node1.result: <output>
@@ -98,15 +103,15 @@ Expose per-node budget hints (`max_node_budget_usd`) so critical nodes can reser
 **The Core Mechanism:**
 A node's visual shape in the DOT graph directly determines its execution behavior:
 
-| Shape | Handler | Behavior |
-|---|---|---|
-| Mdiamond | start | Entry point |
-| box | codergen | LLM execution |
-| diamond | conditional | Routing decision |
-| parallelogram | tool | Shell command |
-| hexagon | wait.human | Human-in-the-loop |
-| component | parallel | Fan-out |
-| Msquare | exit | Terminal + goal gate check |
+| Shape         | Handler     | Behavior                   |
+| ------------- | ----------- | -------------------------- |
+| Mdiamond      | start       | Entry point                |
+| box           | codergen    | LLM execution              |
+| diamond       | conditional | Routing decision           |
+| parallelogram | tool        | Shell command              |
+| hexagon       | wait.human  | Human-in-the-loop          |
+| component     | parallel    | Fan-out                    |
+| Msquare       | exit        | Terminal + goal gate check |
 
 The same graph is both the visual documentation and the executable specification.
 
@@ -125,6 +130,7 @@ Add composite shapes that combine behaviors — e.g., a shape that means "LLM ex
 
 **The Core Mechanism:**
 After each node completes, the engine saves a `PipelineCheckpoint` containing:
+
 - Current node ID
 - All completed nodes
 - All node outcomes
@@ -148,6 +154,7 @@ Add checkpoint diffing — instead of saving full snapshots, save deltas from th
 
 **The Core Mechanism:**
 Before execution begins, two systems run in sequence:
+
 1. **Validation** (12 lint rules) checks structural integrity — missing start nodes, unreachable nodes, invalid conditions, dangling edges
 2. **Transforms** normalize the graph — applying stylesheet defaults, expanding prompt variables
 
@@ -166,14 +173,14 @@ Add runtime validation that re-checks invariants mid-execution (e.g., verify tha
 
 ## Summary: PAS as an Organism
 
-| Biological System | PAS Equivalent | Emergence |
-|---|---|---|
-| Thermoregulation | Nested retry + goal gate + context loops | Convergent quality improvement |
-| Pheromone trails | Multi-signal edge selection | Adaptive routing without central control |
-| Long-term potentiation | Context accumulation across nodes | Collective intelligence > sum of parts |
-| Metabolic budgeting | Cost tracking + budget limits | Self-regulating resource allocation |
-| Morphological computation | Shape-driven handler dispatch | Structure IS behavior |
-| Planarian regeneration | Checkpoint-based crash recovery | Stateless resilience |
-| Innate immune system | Pre-execution validation | Structural immunity to failure categories |
+| Biological System         | PAS Equivalent                           | Emergence                                 |
+| ------------------------- | ---------------------------------------- | ----------------------------------------- |
+| Thermoregulation          | Nested retry + goal gate + context loops | Convergent quality improvement            |
+| Pheromone trails          | Multi-signal edge selection              | Adaptive routing without central control  |
+| Long-term potentiation    | Context accumulation across nodes        | Collective intelligence > sum of parts    |
+| Metabolic budgeting       | Cost tracking + budget limits            | Self-regulating resource allocation       |
+| Morphological computation | Shape-driven handler dispatch            | Structure IS behavior                     |
+| Planarian regeneration    | Checkpoint-based crash recovery          | Stateless resilience                      |
+| Innate immune system      | Pre-execution validation                 | Structural immunity to failure categories |
 
 The deepest emergence in this system is that **the pipeline is not a program — it's an environment**. The DOT graph defines a landscape, context provides nutrients, handlers are organisms, and constraints (budget, steps, goal gates) are selection pressures. What "runs" is not a predetermined sequence but an adaptive traversal that responds to its own outputs. The pipeline doesn't execute a plan — it evolves toward a goal.

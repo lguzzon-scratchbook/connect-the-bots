@@ -60,13 +60,13 @@ digraph C4_Container {
 
 ### Container Legend
 
-| Container | Technology | Responsibility |
-|-----------|-----------|----------------|
-| Browser Client | Leptos WASM, xterm.js | Renders UI, dispatches server fns, subscribes to SSE |
-| Axum Server | Rust, Leptos SSR | Handles server fns, spawns CLI processes, streams events |
-| Broadcast Channels | tokio::broadcast | Session-keyed event bus with 100-event replay buffer |
-| PAS CLI | Rust binary | `decompose` specs into epics, `scaffold` pipeline .dot files |
-| Filesystem | Local disk | `.pas/spec.md`, `pipelines/*.dot`, beads issues |
+| Container          | Technology            | Responsibility                                               |
+| ------------------ | --------------------- | ------------------------------------------------------------ |
+| Browser Client     | Leptos WASM, xterm.js | Renders UI, dispatches server fns, subscribes to SSE         |
+| Axum Server        | Rust, Leptos SSR      | Handles server fns, spawns CLI processes, streams events     |
+| Broadcast Channels | tokio::broadcast      | Session-keyed event bus with 100-event replay buffer         |
+| PAS CLI            | Rust binary           | `decompose` specs into epics, `scaffold` pipeline .dot files |
+| Filesystem         | Local disk            | `.pas/spec.md`, `pipelines/*.dot`, beads issues              |
 
 ## Level 3: Component
 
@@ -126,17 +126,17 @@ digraph C4_Component {
 
 ### Component Legend
 
-| Component | File | Responsibility |
-|-----------|------|----------------|
-| ApprovalBar | `components/approval_bar.rs` | Button, dispatches `start_execution()`, shows phase spinner |
-| ExecutionPanel | `components/execution_panel.rs` | Subscribes to SSE, renders node list with live status |
-| ExecutionNode | `components/execution_node.rs` | Single node: status badge, cost, notes |
-| start_execution() | `server/execute.rs` | Orchestrates decompose, scaffold, parse, spawn |
-| pas_cli_path() | `server/execute.rs` | Resolves CLI binary from `PAS_CLI_PATH` env var |
-| PipelineRunner | `server/execute.rs` | Walks graph, executes handlers, publishes events |
-| stream_events() | `server/stream.rs` | SSE endpoint, bridges broadcast to EventSource |
-| publish_event() | `server/stream.rs` | Writes to broadcast channel + replay buffer |
-| SESSION_STATE | `server/stream.rs` | Last 100 events per session for reconnect replay |
+| Component         | File                            | Responsibility                                              |
+| ----------------- | ------------------------------- | ----------------------------------------------------------- |
+| ApprovalBar       | `components/approval_bar.rs`    | Button, dispatches `start_execution()`, shows phase spinner |
+| ExecutionPanel    | `components/execution_panel.rs` | Subscribes to SSE, renders node list with live status       |
+| ExecutionNode     | `components/execution_node.rs`  | Single node: status badge, cost, notes                      |
+| start_execution() | `server/execute.rs`             | Orchestrates decompose, scaffold, parse, spawn              |
+| pas_cli_path()    | `server/execute.rs`             | Resolves CLI binary from `PAS_CLI_PATH` env var             |
+| PipelineRunner    | `server/execute.rs`             | Walks graph, executes handlers, publishes events            |
+| stream_events()   | `server/stream.rs`              | SSE endpoint, bridges broadcast to EventSource              |
+| publish_event()   | `server/stream.rs`              | Writes to broadcast channel + replay buffer                 |
+| SESSION_STATE     | `server/stream.rs`              | Last 100 events per session for reconnect replay            |
 
 ## Sequence (as DOT)
 

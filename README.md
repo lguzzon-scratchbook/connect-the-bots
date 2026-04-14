@@ -55,12 +55,12 @@ The handler parses Claude Code's JSON response to extract the result, cost, turn
 
 ### Node attributes for Claude Code nodes
 
-| Attribute | Description |
-|-----------|-------------|
-| `prompt` (required) | The task prompt sent to Claude Code |
-| `llm_model` | Model override (e.g. `"sonnet"`, `"haiku"`, `"opus"`) |
-| `allowed_tools` | Comma-separated list of tools Claude Code may use |
-| `max_budget_usd` | Spending cap for this node |
+| Attribute           | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `prompt` (required) | The task prompt sent to Claude Code                   |
+| `llm_model`         | Model override (e.g. `"sonnet"`, `"haiku"`, `"opus"`) |
+| `allowed_tools`     | Comma-separated list of tools Claude Code may use     |
+| `max_budget_usd`    | Spending cap for this node                            |
 
 Conditional nodes (`shape=diamond`) automatically instruct Claude Code to select an outgoing edge label, enabling LLM-driven branching.
 
@@ -195,15 +195,15 @@ export GEMINI_API_KEY=...
 
 ## Crate Structure
 
-| Crate | Description |
-|-------|-------------|
-| `attractor-types` | Shared error types and context |
-| `attractor-dot` | DOT parser producing typed AST |
-| `attractor-llm` | Unified LLM client (OpenAI, Anthropic, Gemini) |
-| `attractor-tools` | Tool trait, registry, built-in tools, execution environment |
-| `attractor-agent` | Agent session loop with steering and loop detection |
-| `attractor-pipeline` | Pipeline graph, engine, handlers, validation, stylesheets |
-| `attractor-cli` | CLI binary — `pas` (`run`, `validate`, `info`, `plan`, `decompose`, `scaffold`, `generate`) |
+| Crate                | Description                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `attractor-types`    | Shared error types and context                                                              |
+| `attractor-dot`      | DOT parser producing typed AST                                                              |
+| `attractor-llm`      | Unified LLM client (OpenAI, Anthropic, Gemini)                                              |
+| `attractor-tools`    | Tool trait, registry, built-in tools, execution environment                                 |
+| `attractor-agent`    | Agent session loop with steering and loop detection                                         |
+| `attractor-pipeline` | Pipeline graph, engine, handlers, validation, stylesheets                                   |
+| `attractor-cli`      | CLI binary — `pas` (`run`, `validate`, `info`, `plan`, `decompose`, `scaffold`, `generate`) |
 
 ## License
 

@@ -17,6 +17,7 @@ Six builtin tool implementations for Attractor agent system. Structs implement `
 ## API Surface
 
 Exports via [mod.rs](./mod.rs):
+
 - `EditFileTool` — Exact-string file editor
 - `GlobTool` — Glob pattern matcher
 - `GrepTool` — Regex file searcher
@@ -35,11 +36,13 @@ Exports via [mod.rs](./mod.rs):
 ## Behavioral Contracts
 
 **Truncation Limits.**
+
 - `MAX_OUTPUT_CHARS = 20_000`: [glob.rs](./glob.rs), [grep.rs](./grep.rs) — `TruncationMode::Tail`
 - `MAX_OUTPUT_CHARS = 30_000`: [shell.rs](./shell.rs) — `TruncationMode::HeadTail`
 - `MAX_OUTPUT_CHARS = 50_000`: [read_file.rs](./read_file.rs) — `TruncationMode::HeadTail`
 
 **Output Formats.**
+
 - Read file: `"{:>width$} | {}"` (right-aligned line number, pipe separator)
 - Shell: `"Exit code: {}\nStdout:\n{}\nStderr:\n{}"`
 
@@ -47,14 +50,17 @@ Exports via [mod.rs](./mod.rs):
 Missing required field: `"{field} is required"` (e.g., `"file_path is required"`, `"pattern is required"`, `"command is required"`)
 
 `EditFileTool` specific:
+
 - Zero matches: `"old_string not found in {}"`
 - Multiple matches without `replace_all`: `"old_string found {count} times in {path} (at lines: {occurrences:?}). Use replace_all=true to replace all occurrences."`
 
 **Success Formats.**
+
 - Edit: `"Successfully replaced {replacements} occurrence(s) in {}"`
 - Write: `"Successfully wrote {} bytes to {}"`
 
 **Schema Defaults.**
+
 - `read_file` `limit`: 2000 lines
 - `read_file` `offset`: 1-based externally, converted via `saturating_sub(1)`
 - `shell` `timeout_ms`: 10000

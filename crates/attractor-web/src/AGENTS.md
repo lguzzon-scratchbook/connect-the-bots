@@ -28,9 +28,11 @@ Web application source for Attractor workspace IDE. Houses `App` component, `mai
 ## API Surface
 
 **Component Exports** (from `lib.rs`):
+
 - `App() -> impl IntoView`
 
 **Leptos Server Functions** (defined in `server/`, called by `components/`):
+
 - `list_open_projects() -> Vec<Project>`
 - `open_project(folder_path: String) -> Project`
 - `close_project(project_id: i64)`
@@ -39,11 +41,13 @@ Web application source for Attractor workspace IDE. Houses `App` component, `mai
 - `start_execution(project_id: i64) -> ExecutionResponse` (returns `session_id`, `epic_id`, `pipeline_path`)
 
 **HTTP Endpoints** (mounted in `main.rs`):
+
 - `GET /api/terminal/ws` — WebSocket PTY upgrade via `ws_terminal`
 - `GET /api/documents/stream?project_id={id}` — SSE document updates via `document_stream`
 - `GET /api/stream/{session_id}` — SSE pipeline events via `stream_events`
 
 **Shared State** (`AppState` in `server/mod.rs`):
+
 - `db: SqlitePool`
 - `watchers: Arc<Mutex<HashMap<i64, Arc<DocumentWatcher>>>>`
 - `terminal_sessions: TerminalSessions`
@@ -72,27 +76,33 @@ Web application source for Attractor workspace IDE. Houses `App` component, `mai
 ## Behavioral Contracts
 
 **Auto-Selection Logic** (`app.rs`):
+
 - On `load_action` resolution: `if let Some(first) = loaded.first() { active_project_id.set(Some(first.id)); }`
 
 **CSS Classes** (`app.rs`):
+
 - Workspace: `app-workspace`, `workspace-content`
 - Empty state: `empty-state`
 - Project wrapper: `project-view-wrapper`
 
 **URL Patterns** (`main.rs`, `server/`):
+
 - Terminal WS: `/api/terminal/ws`
 - Documents SSE: `/api/documents/stream?project_id={}`
 - Pipeline SSE: `/api/stream/{session_id}`
 
 **Container ID Format** (`components/layout.rs`, `components/terminal.rs`):
+
 - `"terminal-{project_id}"`
 
 **Execution Event Schemas** (`server/execute.rs`):
+
 - Start: `{"type": "node_start", "node_id": "...", "label": "..."}`
 - Complete: `{"type": "node_complete", "node_id": "...", "status": "...", "cost_usd": ..., "notes": "..."}`
 - Pipeline End: `{"type": "pipeline_complete", "total_cost_usd": ..., "completed_nodes": [...]}`
 
 **Status String Mappings** (`server/execute.rs`):
+
 - `Success` → `"success"`
 - `PartialSuccess` → `"partial_success"`
 - `Retry` → `"retry"`
@@ -100,19 +110,23 @@ Web application source for Attractor workspace IDE. Houses `App` component, `mai
 - `Skipped` → `"skipped"`
 
 **Terminal Wire Protocol** (`server/terminal.rs`):
+
 - Session init: `{"type":"session","session_id":"<uuid>"}`
 - Resize: `{"type":"resize","cols":N,"rows":N}`
 - Binary frames for PTY I/O
 - Idle timeout: `Duration::from_secs(30 * 60)` (30 minutes)
 
 **Database Schema Defaults** (`server/db.rs`):
+
 - Timestamps: `datetime('now')` for `last_used`, `created_at`, `updated_at`
 - Unique constraint: `folder_path TEXT NOT NULL UNIQUE`
 
 **Panic Strings** (`main.rs`):
+
 - Database init: `"Failed to initialize database"`
 - Address bind: `"Failed to bind to {addr}: {e}. Is another instance already running?"`
 
 **Hidden File Filter** (`server/projects.rs`):
+
 - Excludes entries where `name_str.starts_with('.')`
 - Injects parent entry `".."` when `dir_path.parent().is_some()`

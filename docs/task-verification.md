@@ -20,14 +20,14 @@ The first layer is **transport-level**. When the pipeline engine dispatches a ta
 
 Every handler must return an `Outcome` struct. The type system enforces the contract at compile time:
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `status` | `StageStatus` | `Success`, `Fail`, `PartialSuccess`, `Retry`, `Skipped` |
-| `preferred_label` | `Option<String>` | Hint for edge selection (conditional routing) |
-| `suggested_next_ids` | `Vec<String>` | Ordered preference for next node |
-| `context_updates` | `HashMap<String, Value>` | Key-value pairs merged into pipeline context |
-| `notes` | `String` | Human-readable summary of what happened |
-| `failure_reason` | `Option<String>` | Explanation when status is `Fail` |
+| Field                | Type                     | Purpose                                                 |
+| -------------------- | ------------------------ | ------------------------------------------------------- |
+| `status`             | `StageStatus`            | `Success`, `Fail`, `PartialSuccess`, `Retry`, `Skipped` |
+| `preferred_label`    | `Option<String>`         | Hint for edge selection (conditional routing)           |
+| `suggested_next_ids` | `Vec<String>`            | Ordered preference for next node                        |
+| `context_updates`    | `HashMap<String, Value>` | Key-value pairs merged into pipeline context            |
+| `notes`              | `String`                 | Human-readable summary of what happened                 |
+| `failure_reason`     | `Option<String>`         | Explanation when status is `Fail`                       |
 
 - **Structure enforcement:** Rust's type system guarantees every handler returns all required fields. There is no "malformed result" at runtime — the compiler catches it.
 - **Data integrity:** Context updates use `serde_json::Value`, so type mismatches (e.g., string where a number is expected) surface when downstream nodes consume them via typed accessors.
@@ -90,6 +90,7 @@ check -> review     [condition="outcome=partial_success"]
 ```
 
 Conditions can reference:
+
 - `outcome` — the node's execution status
 - `preferred_label` — the node's suggested edge label
 - Any key in the pipeline context (e.g., `deploy_env=prod`)
@@ -123,6 +124,7 @@ As each node executes, the context tracks the full pipeline state:
 ### Checkpoint/resume
 
 Pipeline state can be serialized mid-execution and restored later, enabling:
+
 - Long-running pipelines that survive process restarts
 - Human review gates that pause for approval
 - Debugging failed pipelines from the point of failure
@@ -139,16 +141,16 @@ Each node's `cost_usd` context update is accumulated. The engine logs per-node a
 
 Before any execution begins, the pipeline is validated against 12 built-in lint rules:
 
-| Rule | Severity | What it checks |
-|------|----------|----------------|
-| Start/exit node presence | Error | Pipeline has exactly one start and at least one exit |
-| Reachability | Error | All nodes are reachable from start |
-| Edge targets exist | Error | No edges pointing to undefined nodes |
-| Condition syntax | Error | Edge conditions are well-formed |
-| Goal gate has retry | Warning | Goal gate nodes have a retry target defined |
-| Prompt presence | Warning | Execution nodes have a prompt attribute |
-| Fidelity values | Warning | Context fidelity attributes use valid prefixes |
-| Orphan detection | Warning | No disconnected subgraphs |
+| Rule                     | Severity | What it checks                                       |
+| ------------------------ | -------- | ---------------------------------------------------- |
+| Start/exit node presence | Error    | Pipeline has exactly one start and at least one exit |
+| Reachability             | Error    | All nodes are reachable from start                   |
+| Edge targets exist       | Error    | No edges pointing to undefined nodes                 |
+| Condition syntax         | Error    | Edge conditions are well-formed                      |
+| Goal gate has retry      | Warning  | Goal gate nodes have a retry target defined          |
+| Prompt presence          | Warning  | Execution nodes have a prompt attribute              |
+| Fidelity values          | Warning  | Context fidelity attributes use valid prefixes       |
+| Orphan detection         | Warning  | No disconnected subgraphs                            |
 
 Validation runs as Phase 2 of the 5-phase lifecycle (parse → **validate** → initialize → execute → finalize). Errors abort before any LLM calls are made.
 
@@ -158,11 +160,11 @@ Validation runs as Phase 2 of the 5-phase lifecycle (parse → **validate** → 
 
 ## Summary: Verification Layers
 
-| Layer | What is Checked | Failure Result |
-|-------|----------------|----------------|
-| **Static Validation** | Pipeline structure correct? | `ValidationError` before execution |
-| **Handler Dispatch** | Handler exists and responds? | `HandlerError`, task abort |
-| **Outcome Schema** | Output has required fields? | Compile-time error (Rust types) |
-| **Edge Routing** | Status matches a route? | Pipeline terminates or errors |
-| **Goal Gates** | Did the intended change happen? | Retry loop or `GoalGateUnsatisfied` |
-| **Budget/Step Guards** | Within resource limits? | Pipeline abort with clear message |
+| Layer                  | What is Checked                 | Failure Result                      |
+| ---------------------- | ------------------------------- | ----------------------------------- |
+| **Static Validation**  | Pipeline structure correct?     | `ValidationError` before execution  |
+| **Handler Dispatch**   | Handler exists and responds?    | `HandlerError`, task abort          |
+| **Outcome Schema**     | Output has required fields?     | Compile-time error (Rust types)     |
+| **Edge Routing**       | Status matches a route?         | Pipeline terminates or errors       |
+| **Goal Gates**         | Did the intended change happen? | Retry loop or `GoalGateUnsatisfied` |
+| **Budget/Step Guards** | Within resource limits?         | Pipeline abort with clear message   |
