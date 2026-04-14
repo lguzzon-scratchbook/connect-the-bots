@@ -202,6 +202,79 @@ pas decompose docs/specs/auth-spec.md
 
 ---
 
+### `generate` — Generate pipeline from spec files
+
+Uses Claude to convert a technical specification (and optional PRD) into a pipeline `.dot` file. Supports single-file and directory modes.
+
+```
+pas generate [OPTIONS] <FILE>...
+pas generate <DIRECTORY>
+```
+
+#### Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `FILE` | Yes | Spec file path, or PRD then spec (positional), or a directory of `*-spec.md` files |
+
+#### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--prd <PATH>` | — | Explicit PRD file path |
+| `--spec <PATH>` | — | Explicit spec file path |
+| `--output <PATH>` | `pipelines/<stem>.dot` | Output file path |
+
+#### Modes
+
+**Single-file mode:**
+```bash
+pas generate my-spec.md                    # Spec only
+pas generate my-prd.md my-spec.md          # PRD + spec (positional)
+pas generate --prd prd.md --spec spec.md   # PRD + spec (named)
+```
+
+**Directory mode:**
+```bash
+pas generate docs/implementation/
+```
+
+In directory mode, files ending in `-spec.md` are discovered and sorted lexically. Each spec is paired with a matching `-prd.md` if one exists (e.g. `auth-spec.md` pairs with `auth-prd.md`). One `.dot` pipeline is generated per spec.
+
+#### Timeout tiers
+
+Generated pipelines assign timeouts to every node based on complexity:
+
+| Tier | Timeout | Used for |
+|------|---------|----------|
+| Trivial | 120s | Conditionals, haiku routing, reading a single file |
+| Light | 300s | Linting, formatting checks, simple single-step verification |
+| Standard | 600s | Investigation, verification with iteration, fixups, most work nodes |
+| Heavy | 900s | Implementing features, writing substantial new code |
+| Intensive | 1200s | Full test suites, large refactors, multi-step builds |
+
+#### Output
+
+Writes the pipeline to the output path, validates it, and prints node count and validation status.
+
+#### Examples
+
+```bash
+# Generate from a spec
+pas generate docs/auth-spec.md
+
+# Generate with PRD for richer context
+pas generate docs/auth-prd.md docs/auth-spec.md
+
+# Generate all pipelines from a directory of specs
+pas generate docs/implementation/
+
+# Then run it
+pas run pipelines/auth-spec.dot -w .
+```
+
+---
+
 ### `scaffold` — Generate pipeline from beads epic
 
 Creates a pipeline DOT file from a beads epic. The pipeline iterates through all child tasks of the epic, implementing each one.

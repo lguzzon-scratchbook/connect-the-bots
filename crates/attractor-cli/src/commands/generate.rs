@@ -277,16 +277,20 @@ Edge attrs: `label` (e.g. "PASS","FAIL"), `condition` (e.g. preferred_label=PASS
 
 ## Timeouts
 
-Every node MUST have a `timeout` attribute. Set it based on complexity:
-- Lightweight (conditionals, haiku routing, simple file reads): `timeout="120s"`
-- Medium (investigation, verification, fixups, linting): `timeout="300s"`
-- Heavy (implementation, full test suites, multi-step builds): `timeout="900s"`
+Every node MUST have a `timeout` attribute. Claude Code sessions have startup overhead and often iterate multiple times, so timeouts must be generous. Set based on complexity:
+- Trivial (conditionals, haiku routing, reading a single file): `timeout="120s"`
+- Light (linting, formatting checks, simple single-step verification): `timeout="300s"`
+- Standard (investigation, verification with iteration, fixups, most work nodes): `timeout="600s"`
+- Heavy (implementing features, writing substantial new code, multi-file changes): `timeout="900s"`
+- Intensive (full test suites, large refactors, multi-step builds): `timeout="1200s"`
+
+When in doubt, use 600s. Underestimating causes pipeline failures; overestimating just means unused budget. Most work+verify nodes should be 600s or higher.
 
 Example node format:
     my_node [
         label="Short Label"
         shape="box"
-        timeout="300s"
+        timeout="600s"
         prompt="Detailed instructions here."
     ]
 
@@ -537,9 +541,12 @@ mod tests {
         assert!(result.contains("timeout"));
         assert!(result.contains("timeout=\"120s\""));
         assert!(result.contains("timeout=\"300s\""));
+        assert!(result.contains("timeout=\"600s\""));
         assert!(result.contains("timeout=\"900s\""));
-        assert!(result.contains("Lightweight"));
-        assert!(result.contains("Heavy"));
+        assert!(result.contains("timeout=\"1200s\""));
+        assert!(result.contains("Trivial"));
+        assert!(result.contains("Intensive"));
+        assert!(result.contains("When in doubt, use 600s"));
     }
 
     #[test]

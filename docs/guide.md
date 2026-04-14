@@ -73,6 +73,7 @@ pas validate hello.dot   # Check for errors without running
 pas info hello.dot       # Show structure (nodes, edges, goal)
 pas plan --prd           # Generate a PRD template
 pas plan --spec          # Generate a spec template
+pas generate spec.md     # Generate pipeline .dot from spec
 pas decompose spec.md   # Decompose spec into beads tasks
 pas scaffold <EPIC_ID>   # Scaffold pipeline from beads epic
 ```
