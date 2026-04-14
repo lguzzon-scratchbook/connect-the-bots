@@ -268,11 +268,20 @@ async fn run_pipeline_with_streaming(
         }
 
         // Select next edge
+        let ctx_snapshot = context.snapshot().await;
         let resolve = |key: &str| -> String {
             match key {
-                "outcome" => format!("{:?}", outcome.status),
+                "outcome" => status_str(outcome.status),
                 "preferred_label" => outcome.preferred_label.clone().unwrap_or_default(),
-                _ => String::new(),
+                _ => ctx_snapshot
+                    .get(key)
+                    .map(|v| match v {
+                        serde_json::Value::String(s) => s.clone(),
+                        serde_json::Value::Bool(b) => b.to_string(),
+                        serde_json::Value::Number(n) => n.to_string(),
+                        _ => v.to_string(),
+                    })
+                    .unwrap_or_default(),
             }
         };
         let next_edge = select_edge(&current_node.id, &outcome, &resolve, graph);
