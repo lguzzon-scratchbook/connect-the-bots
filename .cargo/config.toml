@@ -1,28 +1,55 @@
 [build]
-# Use all CPU cores for compilation (auto-detect when unset)
-
 # Enable pipelining for faster crate compilation
 pipelining = true
 
-# Link-time optimization happens in release profile,
-# but we can speed up dev builds
+# Shared target directory for workspace builds
 target-dir = "target"
 
+# Use fast linker when available (mold > lld > system ld)
+rustflags = ["-C", "link-arg=-fuse-ld=mold", "-C", "link-arg=-fuse-ld=lld"]
+
 [profile.dev]
-# Faster dev builds with less codegen
+# Maximum parallelism for dev builds
 codegen-units = 256
 incremental = true
+# Split debuginfo reduces target directory size and speeds up linking
+split-debuginfo = "unpacked"
+debug = true
+opt-level = 0
 
 [profile.release]
-# Parallel front-end for faster release builds (Rust 1.78+)
-# Only use if on recent Rust - comment out if build fails
-# rustflags = ["-Z", "threads=8"]
-
-# Thin LTO is faster than fat LTO but still optimizes
+# Thin LTO: 5-10x faster than fat LTO, good optimization
 lto = "thin"
-
-# More codegen units = faster compile, slightly bigger binary
 codegen-units = 16
+
+# Even faster for quick release builds
+[profile.quick-release]
+inherits = "release"
+lto = false
+codegen-units = 256
+panic = "abort"
+strip = true
+
+# Maximum optimization for distribution
+[profile.dist]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
 
 [registries.crates-io]
 protocol = "sparse"
+
+# Use git CLI for fetches (faster for large repos)
+[net]
+git-fetch-with-cli = true
+
+[term]
+quiet = false
+progress.when = "auto"
+
+# Environment setup hints (set these in your shell profile for max speed):
+# export RUSTC_WRAPPER=sccache          # Enable sccache for C artifact caching
+# export CARGO_INCREMENTAL=1            # Already enabled in profile, but explicit here
+# export SCCACHE_CACHE_SIZE=10G         # Size limit for sccache
