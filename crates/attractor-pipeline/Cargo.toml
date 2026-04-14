@@ -29,3 +29,8 @@ async-trait = { workspace = true }
 serde_json = { workspace = true }
 attractor-dot = { path = "../attractor-dot" }
 attractor-types = { path = "../attractor-types" }
+criterion = { workspace = true }
+
+[[bench]]
+name = "graph"
+harness = false
