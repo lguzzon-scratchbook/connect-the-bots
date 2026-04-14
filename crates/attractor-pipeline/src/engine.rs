@@ -16,6 +16,48 @@ use crate::handler::{default_registry, HandlerRegistry};
 use crate::validation::validate_or_raise;
 
 // ---------------------------------------------------------------------------
+// Security helpers
+// ---------------------------------------------------------------------------
+
+/// Strip control characters that could affect terminal rendering.
+/// Removes ANSI escape sequences, BEL, and other control chars.
+fn sanitize_for_terminal(input: &str) -> String {
+    // First, strip ANSI escape sequences (ESC[...m)
+    let without_ansi = strip_ansi_sequences(input);
+    // Then filter out remaining control characters
+    without_ansi
+        .chars()
+        .filter(|&c| {
+            // Allow printable ASCII and common whitespace
+            c.is_ascii_graphic() || c.is_ascii_whitespace()
+        })
+        .collect()
+}
+
+/// Strip ANSI escape sequences (ESC[...m format)
+fn strip_ansi_sequences(input: &str) -> String {
+    let mut result = String::new();
+    let mut chars = input.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' {
+            // Found ESC, check if this is an ANSI sequence
+            if chars.peek() == Some(&'[') {
+                // Consume '[' and everything until we hit a letter
+                chars.next();
+                while let Some(seq_c) = chars.next() {
+                    if seq_c.is_ascii_alphabetic() {
+                        break;
+                    }
+                }
+                continue;
+            }
+        }
+        result.push(c);
+    }
+    result
+}
+
+// ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
@@ -145,10 +187,11 @@ impl PipelineExecutor {
                 completed_nodes = cp.completed_nodes;
                 node_outcomes = cp.node_outcomes;
                 // Jump to the node that was about to execute
+                let sanitized_id = sanitize_for_terminal(&cp.current_node_id);
                 current_node = graph.node(&cp.current_node_id).ok_or_else(|| {
                     AttractorError::Other(format!(
                         "Checkpoint node '{}' not found in graph — was the .dot file changed?",
-                        cp.current_node_id
+                        sanitized_id
                     ))
                 })?;
             }
@@ -835,5 +878,37 @@ mod tests {
             err.contains("exceeded budget"),
             "Expected budget error, got: {err}"
         );
+    }
+
+    // ---------------------------------------------------------------------------
+    // Sanitize for terminal tests
+    // ---------------------------------------------------------------------------
+
+    #[test]
+    fn sanitize_for_terminal_removes_ansi_codes() {
+        let input = "\x1b[31mred\x1b[0m";
+        let result = sanitize_for_terminal(input);
+        assert_eq!(result, "red");
+    }
+
+    #[test]
+    fn sanitize_for_terminal_removes_bell() {
+        let input = "hello\x07world";
+        let result = sanitize_for_terminal(input);
+        assert_eq!(result, "helloworld");
+    }
+
+    #[test]
+    fn sanitize_for_terminal_preserves_printable() {
+        let input = "Hello, World! 123";
+        let result = sanitize_for_terminal(input);
+        assert_eq!(result, "Hello, World! 123");
+    }
+
+    #[test]
+    fn sanitize_for_terminal_preserves_whitespace() {
+        let input = "hello\n\t world";
+        let result = sanitize_for_terminal(input);
+        assert_eq!(result, "hello\n\t world");
     }
 }

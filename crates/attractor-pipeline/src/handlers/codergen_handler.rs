@@ -9,6 +9,63 @@ use crate::graph::{PipelineGraph, PipelineNode};
 use crate::handler::NodeHandler;
 
 // ---------------------------------------------------------------------------
+// Input validation constants and functions
+// ---------------------------------------------------------------------------
+
+/// Maximum prompt length (10KB)
+const MAX_PROMPT_LEN: usize = 10 * 1024;
+
+/// Validate prompt before passing to CLI.
+/// Returns Err if prompt contains null bytes or exceeds length limit.
+fn validate_prompt(prompt: &str) -> attractor_types::Result<&str> {
+    if prompt.len() > MAX_PROMPT_LEN {
+        return Err(attractor_types::AttractorError::ValidationError(format!(
+            "Prompt exceeds maximum length of {} bytes",
+            MAX_PROMPT_LEN
+        )));
+    }
+    if prompt.contains('\0') {
+        return Err(attractor_types::AttractorError::ValidationError(
+            "Prompt contains null bytes".into(),
+        ));
+    }
+    Ok(prompt)
+}
+
+/// Validate allowed_tools format: comma-separated tool names (alphanumeric + underscore/hyphen)
+fn validate_allowed_tools(tools: &str) -> attractor_types::Result<&str> {
+    for tool in tools.split(',') {
+        let tool = tool.trim();
+        if tool.is_empty() {
+            continue;
+        }
+        if !tool.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+            return Err(attractor_types::AttractorError::ValidationError(
+                format!("Invalid tool name '{}' in allowed_tools: only alphanumeric, underscore, and hyphen allowed", tool)
+            ));
+        }
+    }
+    Ok(tools)
+}
+
+/// Validate max_budget_usd: must be positive finite number
+fn validate_max_budget_usd(budget: &str) -> attractor_types::Result<f64> {
+    let value: f64 = budget.parse().map_err(|_| {
+        attractor_types::AttractorError::ValidationError(
+            format!("Invalid max_budget_usd value: '{}' is not a valid number", budget)
+        )
+    })?;
+
+    if !value.is_finite() || value < 0.0 {
+        return Err(attractor_types::AttractorError::ValidationError(
+            format!("Invalid max_budget_usd value: {} (must be a positive finite number)", value)
+        ));
+    }
+
+    Ok(value)
+}
+
+// ---------------------------------------------------------------------------
 // LlmCliProvider — which CLI tool to invoke for an LLM node
 // ---------------------------------------------------------------------------
 
@@ -174,7 +231,7 @@ struct CliRunConfig<'a> {
     graph: &'a PipelineGraph,
 }
 
-fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
+fn build_cli_command(cfg: &CliRunConfig<'_>) -> attractor_types::Result<tokio::process::Command> {
     let mut cmd = match cfg.provider {
         LlmCliProvider::Claude => {
             let mut cmd = tokio::process::Command::new("claude");
@@ -184,15 +241,20 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
                 .arg("json")
                 .arg("--no-session-persistence")
                 .arg("--dangerously-skip-permissions")
+                // SECURITY: --dangerously-skip-permissions bypasses ALL permission prompts.
+                // This allows the LLM to edit files and execute bash commands without
+                // user confirmation. Only use with trusted graphs in isolated environments.
                 .arg("--strict-mcp-config")
                 .arg("--disable-slash-commands");
             if let Some(model) = cfg.model {
                 cmd.arg("--model").arg(model);
             }
             if let Some(AttributeValue::String(tools)) = cfg.node.raw_attrs.get("allowed_tools") {
+                let tools = validate_allowed_tools(tools)?;
                 cmd.arg("--allowedTools").arg(tools);
             }
             if let Some(AttributeValue::String(budget)) = cfg.node.raw_attrs.get("max_budget_usd") {
+                let _value = validate_max_budget_usd(budget)?; // Validate but pass original string to CLI
                 cmd.arg("--max-budget-usd").arg(budget);
             }
             cmd
@@ -201,6 +263,9 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
             let mut cmd = tokio::process::Command::new("codex");
             cmd.arg("--json")
                 .arg("--yolo")
+                // SECURITY: --yolo enables auto-approval for all Codex actions.
+                // The LLM can execute commands without user confirmation.
+                // Use only in isolated environments with trusted graphs.
                 .arg("--skip-git-repo-check")
                 .arg("--ephemeral");
             if let Some(model) = cfg.model {
@@ -218,7 +283,11 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
             cmd.arg("--output-format")
                 .arg("json")
                 .arg("--approval-mode")
-                .arg("yolo");
+                .arg("yolo")
+                // SECURITY: --approval-mode yolo enables auto-approval for all Gemini actions.
+                // The LLM can execute commands without user confirmation.
+                // Use only in isolated environments with trusted graphs.
+                ;
             if let Some(model) = cfg.model {
                 cmd.arg("--model").arg(model);
             }
@@ -234,7 +303,7 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> tokio::process::Command {
     }
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
-    cmd
+    Ok(cmd)
 }
 
 // ---------------------------------------------------------------------------
@@ -507,7 +576,7 @@ impl NodeHandler for CodergenHandler {
             workdir: workdir.as_deref(),
             node,
             graph,
-        });
+        })?;
 
         // Spawn the CLI process — detect missing binary
         let child = cmd.spawn().map_err(|e| {
@@ -857,7 +926,7 @@ mod tests {
             node: &node,
             graph: &graph,
         };
-        let cmd = build_cli_command(&cfg);
+        let cmd = build_cli_command(&cfg).unwrap();
         let args: Vec<_> = cmd
             .as_std()
             .get_args()
@@ -882,7 +951,7 @@ mod tests {
             node: &node,
             graph: &graph,
         };
-        let cmd = build_cli_command(&cfg);
+        let cmd = build_cli_command(&cfg).unwrap();
         let args: Vec<_> = cmd
             .as_std()
             .get_args()
@@ -908,7 +977,7 @@ mod tests {
             node: &node,
             graph: &graph,
         };
-        let cmd = build_cli_command(&cfg);
+        let cmd = build_cli_command(&cfg).unwrap();
         let args: Vec<_> = cmd
             .as_std()
             .get_args()
@@ -966,5 +1035,63 @@ mod tests {
         let labels = vec!["BUY".into(), "HOLD".into(), "SELL".into()];
         let response = "This player is interesting but I need more data.";
         assert_eq!(extract_label(response, &labels), None);
+    }
+
+    // --- Prompt validation ---
+
+    #[test]
+    fn validate_prompt_rejects_null_bytes() {
+        let result = validate_prompt("hello\x00world");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("null bytes"));
+    }
+
+    #[test]
+    fn validate_prompt_rejects_too_long() {
+        let long_prompt = "x".repeat(10 * 1024 + 1);
+        let result = validate_prompt(&long_prompt);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("exceeds"));
+    }
+
+    #[test]
+    fn validate_prompt_accepts_valid() {
+        let result = validate_prompt("Valid prompt content");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "Valid prompt content");
+    }
+
+    // --- Validation helpers ---
+
+    #[test]
+    fn validate_allowed_tools_accepts_valid() {
+        let result = validate_allowed_tools("bash,Read,edit-file");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_allowed_tools_rejects_invalid_chars() {
+        let result = validate_allowed_tools("bash;rm -rf");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Invalid tool name"));
+    }
+
+    #[test]
+    fn validate_max_budget_usd_accepts_valid() {
+        let result = validate_max_budget_usd("10.50");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 10.50);
+    }
+
+    #[test]
+    fn validate_max_budget_usd_rejects_negative() {
+        let result = validate_max_budget_usd("-5.0");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_max_budget_usd_rejects_non_numeric() {
+        let result = validate_max_budget_usd("abc");
+        assert!(result.is_err());
     }
 }
