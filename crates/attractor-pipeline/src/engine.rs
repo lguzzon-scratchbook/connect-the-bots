@@ -1,6 +1,4 @@
 //! Pipeline execution engine — the core traversal loop.
-//!
-//! Implements the 5-phase lifecycle: parse, validate, initialize, execute, finalize.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -11,26 +9,25 @@ use tokio::time::timeout;
 use crate::checkpoint::{clear_checkpoint, load_checkpoint, save_checkpoint, PipelineCheckpoint};
 use crate::edge_selection::select_edge;
 use crate::goal_gate::enforce_goal_gates;
-use crate::graph::PipelineGraph;
+use crate::graph::{PipelineGraph, PipelineNode};
 use crate::handler::{default_registry, HandlerRegistry};
 use crate::validation::validate_or_raise;
 
-// ---------------------------------------------------------------------------
-// Security helpers
-// ---------------------------------------------------------------------------
+// Context keys used throughout the engine
+const KEY_OUTCOME: &str = "outcome";
+const KEY_PREFERRED_LABEL: &str = "preferred_label";
+#[allow(dead_code)]
+const KEY_WORKDIR: &str = "workdir";
+const KEY_MAX_STEPS: &str = "max_steps";
+const KEY_MAX_BUDGET_USD: &str = "max_budget_usd";
 
 /// Strip control characters that could affect terminal rendering.
 /// Removes ANSI escape sequences, BEL, and other control chars.
 fn sanitize_for_terminal(input: &str) -> String {
-    // First, strip ANSI escape sequences (ESC[...m)
     let without_ansi = strip_ansi_sequences(input);
-    // Then filter out remaining control characters
     without_ansi
         .chars()
-        .filter(|&c| {
-            // Allow printable ASCII and common whitespace
-            c.is_ascii_graphic() || c.is_ascii_whitespace()
-        })
+        .filter(|&c| c.is_ascii_graphic() || c.is_ascii_whitespace())
         .collect()
 }
 
@@ -39,27 +36,26 @@ fn strip_ansi_sequences(input: &str) -> String {
     let mut result = String::new();
     let mut chars = input.chars().peekable();
     while let Some(c) = chars.next() {
-        if c == '\x1b' {
-            // Found ESC, check if this is an ANSI sequence
-            if chars.peek() == Some(&'[') {
-                // Consume '[' and everything until we hit a letter
-                chars.next();
-                while let Some(seq_c) = chars.next() {
-                    if seq_c.is_ascii_alphabetic() {
-                        break;
-                    }
+        if c == '\x1b' && chars.peek() == Some(&'[') {
+            chars.next();
+            for seq_c in chars.by_ref() {
+                if seq_c.is_ascii_alphabetic() {
+                    break;
                 }
-                continue;
             }
+            continue;
         }
         result.push(c);
     }
     result
 }
 
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
+fn status_to_string(status: StageStatus) -> String {
+    serde_json::to_string(&status)
+        .unwrap_or_default()
+        .trim_matches('"')
+        .to_string()
+}
 
 /// The core pipeline executor. Owns a handler registry and drives graph traversal.
 pub struct PipelineExecutor {
@@ -79,10 +75,6 @@ pub struct PipelineResult {
     pub final_context: HashMap<String, serde_json::Value>,
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 /// Convert an `attractor_dot::AttributeValue` to a `serde_json::Value`.
 fn attr_to_json(val: &attractor_dot::AttributeValue) -> serde_json::Value {
     match val {
@@ -94,20 +86,19 @@ fn attr_to_json(val: &attractor_dot::AttributeValue) -> serde_json::Value {
     }
 }
 
-/// Map a `StageStatus` to the lowercase string used in edge conditions.
-fn status_to_string(status: StageStatus) -> &'static str {
-    match status {
-        StageStatus::Success => "success",
-        StageStatus::PartialSuccess => "partial_success",
-        StageStatus::Retry => "retry",
-        StageStatus::Fail => "fail",
-        StageStatus::Skipped => "skipped",
-    }
+fn get_handler<'a>(
+    registry: &'a HandlerRegistry,
+    node: &PipelineNode,
+) -> Result<&'a crate::handler::DynHandler> {
+    let handler_type = registry.resolve_type(node);
+    registry
+        .get(&handler_type)
+        .ok_or_else(|| AttractorError::HandlerError {
+            handler: handler_type.clone(),
+            node: node.id.clone(),
+            message: format!("No handler registered for type '{}'", handler_type),
+        })
 }
-
-// ---------------------------------------------------------------------------
-// PipelineExecutor
-// ---------------------------------------------------------------------------
 
 impl PipelineExecutor {
     /// Create an executor with the given handler registry.
@@ -197,14 +188,13 @@ impl PipelineExecutor {
             }
         }
 
-        // Safety limits from context (set by CLI flags)
         let max_budget: f64 = context
-            .get("max_budget_usd")
+            .get(KEY_MAX_BUDGET_USD)
             .await
             .and_then(|v| v.as_f64())
             .unwrap_or(200.0);
         let max_steps: u64 = context
-            .get("max_steps")
+            .get(KEY_MAX_STEPS)
             .await
             .and_then(|v| v.as_u64())
             .unwrap_or(200);
@@ -241,40 +231,25 @@ impl PipelineExecutor {
                     }
                 }
 
-                // Execute the exit handler
-                let handler_type = self.registry.resolve_type(current_node);
-                let handler = self.registry.get(&handler_type).ok_or_else(|| {
-                    AttractorError::HandlerError {
-                        handler: handler_type.clone(),
-                        node: current_node.id.clone(),
-                        message: format!("No handler registered for type '{}'", handler_type),
-                    }
-                })?;
-                let outcome = handler.execute(current_node, &context, graph).await?;
+                let outcome = get_handler(&self.registry, current_node)?
+                    .execute(current_node, &context, graph)
+                    .await?;
                 completed_nodes.push(current_node.id.clone());
                 node_outcomes.insert(current_node.id.clone(), outcome);
                 break;
             }
 
-            // Execute handler
-            let handler_type = self.registry.resolve_type(current_node);
-            let handler =
-                self.registry
-                    .get(&handler_type)
-                    .ok_or_else(|| AttractorError::HandlerError {
-                        handler: handler_type.clone(),
-                        node: current_node.id.clone(),
-                        message: format!("No handler registered for type '{}'", handler_type),
-                    })?;
+            let handler = get_handler(&self.registry, current_node)?;
+            let handler_type = handler.handler_type().to_string();
             let execution = handler.execute(current_node, &context, graph);
             let outcome = if let Some(t) = current_node.timeout {
-                timeout(t, execution).await.map_err(|_| {
-                    AttractorError::HandlerError {
+                timeout(t, execution)
+                    .await
+                    .map_err(|_| AttractorError::HandlerError {
                         handler: handler_type.clone(),
                         node: current_node.id.clone(),
                         message: format!("Timeout after {:?}", t),
-                    }
-                })?
+                    })?
             } else {
                 execution.await
             }?;
@@ -313,13 +288,16 @@ impl PipelineExecutor {
             context.apply_updates(outcome.context_updates.clone()).await;
             context
                 .set(
-                    "outcome",
-                    serde_json::Value::String(status_to_string(outcome.status).to_string()),
+                    KEY_OUTCOME,
+                    serde_json::Value::String(status_to_string(outcome.status)),
                 )
                 .await;
             if let Some(ref label) = outcome.preferred_label {
                 context
-                    .set("preferred_label", serde_json::Value::String(label.clone()))
+                    .set(
+                        KEY_PREFERRED_LABEL,
+                        serde_json::Value::String(label.clone()),
+                    )
                     .await;
             }
 
@@ -327,8 +305,8 @@ impl PipelineExecutor {
             let ctx_snapshot = context.snapshot().await;
             let resolve = |key: &str| -> String {
                 match key {
-                    "outcome" => status_to_string(outcome.status).to_string(),
-                    "preferred_label" => outcome.preferred_label.clone().unwrap_or_default(),
+                    KEY_OUTCOME => status_to_string(outcome.status),
+                    KEY_PREFERRED_LABEL => outcome.preferred_label.clone().unwrap_or_default(),
                     _ => ctx_snapshot
                         .get(key)
                         .map(|v| match v {
@@ -391,10 +369,6 @@ impl PipelineExecutor {
         })
     }
 }
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
@@ -879,10 +853,6 @@ mod tests {
             "Expected budget error, got: {err}"
         );
     }
-
-    // ---------------------------------------------------------------------------
-    // Sanitize for terminal tests
-    // ---------------------------------------------------------------------------
 
     #[test]
     fn sanitize_for_terminal_removes_ansi_codes() {

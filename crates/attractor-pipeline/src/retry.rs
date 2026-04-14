@@ -80,10 +80,12 @@ where
     }
 
     // Retries exhausted — return last error or exhaustion error
-    Err(last_err.unwrap_or_else(|| attractor_types::AttractorError::RetriesExhausted {
-        node: node_id.to_string(),
-        attempts: attempt_count,
-    }))
+    Err(
+        last_err.unwrap_or_else(|| attractor_types::AttractorError::RetriesExhausted {
+            node: node_id.to_string(),
+            attempts: attempt_count,
+        }),
+    )
 }
 
 #[cfg(test)]

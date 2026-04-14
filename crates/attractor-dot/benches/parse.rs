@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn generate_large_graph(node_count: usize) -> String {
     // Pre-allocate capacity to minimize reallocations (rough estimate: ~80 bytes per node)
@@ -18,7 +18,7 @@ fn generate_large_graph(node_count: usize) -> String {
 }
 
 fn generate_subgraph_graph(nested_count: usize) -> String {
-    let mut dot = format!("digraph Nested {{\n");
+    let mut dot = "digraph Nested {\n".to_string();
     dot.push_str("    start [shape=\"Mdiamond\"];\n");
     dot.push_str("    end [shape=\"Msquare\"];\n");
     for i in 0..nested_count {

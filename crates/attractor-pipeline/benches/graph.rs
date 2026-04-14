@@ -1,8 +1,8 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use attractor_pipeline::PipelineGraph;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn generate_dot_graph(node_count: usize) -> String {
-    let mut dot = format!("digraph Pipeline {{\n");
+    let mut dot = "digraph Pipeline {\n".to_string();
     dot.push_str("    start [shape=\"Mdiamond\",label=\"Start\"];\n");
     dot.push_str("    done [shape=\"Msquare\",label=\"Done\"];\n");
     for i in 0..node_count {
@@ -23,7 +23,7 @@ fn generate_dot_graph(node_count: usize) -> String {
 fn generate_branching_dot_graph(node_count: usize) -> String {
     // Generate a simple valid DOT graph for branching benchmark
     // Creates a binary tree structure with proper quoted attributes
-    let mut dot = format!("digraph Pipeline {{\n");
+    let mut dot = "digraph Pipeline {\n".to_string();
     dot.push_str("    start [shape=\"Mdiamond\"];\n");
     dot.push_str("    end [shape=\"Msquare\"];\n");
 

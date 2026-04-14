@@ -1,16 +1,10 @@
-//! 5-step edge selection algorithm.
-//!
-//! After a node completes, this module determines which outgoing edge to follow
-//! based on a priority cascade: condition match, preferred label, suggested next
-//! IDs, highest weight, and lexical tiebreak.
+//! Edge selection for pipeline node completion.
 
 use std::sync::OnceLock;
 
 use crate::condition::{evaluate_condition, parse_condition};
 use crate::graph::{PipelineEdge, PipelineGraph};
 
-/// Regex for stripping accelerator prefixes from labels.
-/// Compiled once and cached for all subsequent calls.
 static LABEL_NORMALIZER_RE: OnceLock<regex::Regex> = OnceLock::new();
 
 fn get_label_normalizer() -> &'static regex::Regex {
@@ -82,12 +76,8 @@ pub fn select_edge<'a>(
     Some(best_by_weight_then_lexical(&unconditional))
 }
 
-/// Normalize a label for comparison: lowercase, strip accelerator prefixes like
-/// `[Y]`, `Y)`, `Y-`.
 fn normalize_label(label: &str) -> String {
     let s = label.trim().to_lowercase();
-    // Strip accelerator prefixes: [Y] , Y) , Y-
-    // Only match if there's an actual accelerator pattern followed by content.
     get_label_normalizer().replace(&s, "").to_string()
 }
 

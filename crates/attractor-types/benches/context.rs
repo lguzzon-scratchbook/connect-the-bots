@@ -1,5 +1,5 @@
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 use attractor_types::Context;
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -26,7 +26,9 @@ fn bench_context_get(c: &mut Criterion) {
 
     rt.block_on(async {
         for i in 0..100 {
-            context.set(&format!("key{}", i), serde_json::json!(i)).await;
+            context
+                .set(&format!("key{}", i), serde_json::json!(i))
+                .await;
         }
     });
 
@@ -67,7 +69,9 @@ fn bench_context_snapshot(c: &mut Criterion) {
 
     rt.block_on(async {
         for i in 0..100 {
-            context.set(&format!("key{}", i), serde_json::json!(i)).await;
+            context
+                .set(&format!("key{}", i), serde_json::json!(i))
+                .await;
         }
     });
 

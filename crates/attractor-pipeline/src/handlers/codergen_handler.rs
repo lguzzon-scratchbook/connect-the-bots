@@ -8,15 +8,13 @@ use serde::Deserialize;
 use crate::graph::{PipelineGraph, PipelineNode};
 use crate::handler::NodeHandler;
 
-// ---------------------------------------------------------------------------
-// Input validation constants and functions
-// ---------------------------------------------------------------------------
-
 /// Maximum prompt length (10KB)
+#[allow(dead_code)]
 const MAX_PROMPT_LEN: usize = 10 * 1024;
 
 /// Validate prompt before passing to CLI.
 /// Returns Err if prompt contains null bytes or exceeds length limit.
+#[allow(dead_code)]
 fn validate_prompt(prompt: &str) -> attractor_types::Result<&str> {
     if prompt.len() > MAX_PROMPT_LEN {
         return Err(attractor_types::AttractorError::ValidationError(format!(
@@ -39,7 +37,10 @@ fn validate_allowed_tools(tools: &str) -> attractor_types::Result<&str> {
         if tool.is_empty() {
             continue;
         }
-        if !tool.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-') {
+        if !tool
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        {
             return Err(attractor_types::AttractorError::ValidationError(
                 format!("Invalid tool name '{}' in allowed_tools: only alphanumeric, underscore, and hyphen allowed", tool)
             ));
@@ -51,23 +52,21 @@ fn validate_allowed_tools(tools: &str) -> attractor_types::Result<&str> {
 /// Validate max_budget_usd: must be positive finite number
 fn validate_max_budget_usd(budget: &str) -> attractor_types::Result<f64> {
     let value: f64 = budget.parse().map_err(|_| {
-        attractor_types::AttractorError::ValidationError(
-            format!("Invalid max_budget_usd value: '{}' is not a valid number", budget)
-        )
+        attractor_types::AttractorError::ValidationError(format!(
+            "Invalid max_budget_usd value: '{}' is not a valid number",
+            budget
+        ))
     })?;
 
     if !value.is_finite() || value < 0.0 {
-        return Err(attractor_types::AttractorError::ValidationError(
-            format!("Invalid max_budget_usd value: {} (must be a positive finite number)", value)
-        ));
+        return Err(attractor_types::AttractorError::ValidationError(format!(
+            "Invalid max_budget_usd value: {} (must be a positive finite number)",
+            value
+        )));
     }
 
     Ok(value)
 }
-
-// ---------------------------------------------------------------------------
-// LlmCliProvider — which CLI tool to invoke for an LLM node
-// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum LlmCliProvider {
@@ -119,10 +118,6 @@ impl LlmCliProvider {
         }
     }
 }
-
-// ---------------------------------------------------------------------------
-// CLI output structs
-// ---------------------------------------------------------------------------
 
 /// Result shape from `claude -p --output-format json`
 #[derive(Deserialize)]
@@ -213,13 +208,7 @@ struct NormalizedCliResult {
     is_error: bool,
     cost_usd: Option<f64>,
     turns: Option<u32>,
-    #[allow(dead_code)]
-    raw_output: String,
 }
-
-// ---------------------------------------------------------------------------
-// CLI command builder
-// ---------------------------------------------------------------------------
 
 struct CliRunConfig<'a> {
     provider: LlmCliProvider,
@@ -227,8 +216,6 @@ struct CliRunConfig<'a> {
     model: Option<&'a str>,
     workdir: Option<&'a str>,
     node: &'a PipelineNode,
-    #[allow(dead_code)]
-    graph: &'a PipelineGraph,
 }
 
 fn build_cli_command(cfg: &CliRunConfig<'_>) -> attractor_types::Result<tokio::process::Command> {
@@ -306,10 +293,6 @@ fn build_cli_command(cfg: &CliRunConfig<'_>) -> attractor_types::Result<tokio::p
     Ok(cmd)
 }
 
-// ---------------------------------------------------------------------------
-// CLI output parsers
-// ---------------------------------------------------------------------------
-
 fn parse_cli_output(
     provider: LlmCliProvider,
     stdout: &str,
@@ -351,7 +334,6 @@ fn parse_claude_output(stdout: &str, node_id: &str) -> Result<NormalizedCliResul
         is_error: parsed.is_error || parsed.subtype == "error",
         cost_usd: Some(parsed.total_cost_usd),
         turns: Some(parsed.num_turns),
-        raw_output: stdout.to_string(),
     })
 }
 
@@ -393,7 +375,6 @@ fn parse_codex_output(stdout: &str, node_id: &str) -> Result<NormalizedCliResult
         is_error,
         cost_usd: None,
         turns: None,
-        raw_output: stdout.to_string(),
     })
 }
 
@@ -415,7 +396,6 @@ fn parse_gemini_output(stdout: &str, node_id: &str) -> Result<NormalizedCliResul
             is_error: true,
             cost_usd: None,
             turns: None,
-            raw_output: stdout.to_string(),
         });
     }
 
@@ -424,28 +404,10 @@ fn parse_gemini_output(stdout: &str, node_id: &str) -> Result<NormalizedCliResul
         is_error: false,
         cost_usd: None,
         turns: None,
-        raw_output: stdout.to_string(),
     })
 }
 
-// ---------------------------------------------------------------------------
-// CodergenHandler — LLM task handler (box shape)
-//
-// Shells out to a CLI tool (Claude Code, Codex CLI, or Gemini CLI) for each
-// node, passing the node's prompt. The provider is selected via the
-// `llm_provider` node attribute (default: claude).
-//
-// Supported node attributes:
-//   - prompt (required): The task prompt sent to the CLI
-//   - llm_provider: "claude", "codex", or "gemini" (default: "claude")
-//   - llm_model: Override the model (e.g. "sonnet", "o3", "gemini-2.5-pro")
-//   - allowed_tools: Comma-separated tool list (Claude only)
-//   - max_budget_usd: Spending cap for this node (Claude only)
-//   - timeout: Duration before the CLI invocation is killed (default: 10m)
-//
-// The pipeline context key "workdir" controls the working directory.
-// ---------------------------------------------------------------------------
-
+/// LLM task handler — shells out to Claude, Codex, or Gemini CLI.
 pub struct CodergenHandler;
 
 #[async_trait]
@@ -575,7 +537,6 @@ impl NodeHandler for CodergenHandler {
             model,
             workdir: workdir.as_deref(),
             node,
-            graph,
         })?;
 
         // Spawn the CLI process — detect missing binary
@@ -917,14 +878,12 @@ mod tests {
     #[test]
     fn build_cli_command_claude_has_json_output() {
         let node = make_node("n", "box", Some("do work"), HashMap::new());
-        let graph = make_minimal_graph();
         let cfg = CliRunConfig {
             provider: LlmCliProvider::Claude,
             prompt: "test prompt",
             model: Some("sonnet"),
             workdir: None,
             node: &node,
-            graph: &graph,
         };
         let cmd = build_cli_command(&cfg).unwrap();
         let args: Vec<_> = cmd
@@ -942,14 +901,12 @@ mod tests {
     #[test]
     fn build_cli_command_codex_prompt_is_positional() {
         let node = make_node("n", "box", Some("do work"), HashMap::new());
-        let graph = make_minimal_graph();
         let cfg = CliRunConfig {
             provider: LlmCliProvider::Codex,
             prompt: "test prompt",
             model: None,
             workdir: Some("/tmp"),
             node: &node,
-            graph: &graph,
         };
         let cmd = build_cli_command(&cfg).unwrap();
         let args: Vec<_> = cmd
@@ -968,14 +925,12 @@ mod tests {
     #[test]
     fn build_cli_command_gemini_uses_approval_mode() {
         let node = make_node("n", "box", Some("do work"), HashMap::new());
-        let graph = make_minimal_graph();
         let cfg = CliRunConfig {
             provider: LlmCliProvider::Gemini,
             prompt: "test prompt",
             model: Some("gemini-2.5-pro"),
             workdir: None,
             node: &node,
-            graph: &graph,
         };
         let cmd = build_cli_command(&cfg).unwrap();
         let args: Vec<_> = cmd
@@ -1073,7 +1028,10 @@ mod tests {
     fn validate_allowed_tools_rejects_invalid_chars() {
         let result = validate_allowed_tools("bash;rm -rf");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid tool name"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid tool name"));
     }
 
     #[test]
