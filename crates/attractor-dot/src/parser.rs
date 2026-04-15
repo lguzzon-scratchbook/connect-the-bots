@@ -16,25 +16,27 @@ fn make_cut_error(desc: &'static str) -> ErrMode<ContextError<StrContext>> {
 }
 
 /// Strip `//` line comments and `/* */` block comments from the input.
+///
+/// Operates on char indices to correctly handle multi-byte UTF-8 sequences.
 pub(crate) fn strip_comments(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
-    let bytes = input.as_bytes();
-    let len = bytes.len();
+    let chars: Vec<char> = input.chars().collect();
+    let len = chars.len();
     let mut i = 0;
 
     while i < len {
-        if i + 1 < len && bytes[i] == b'/' && bytes[i + 1] == b'/' {
+        if i + 1 < len && chars[i] == '/' && chars[i + 1] == '/' {
             // line comment — skip until newline
             i += 2;
-            while i < len && bytes[i] != b'\n' {
+            while i < len && chars[i] != '\n' {
                 i += 1;
             }
-        } else if i + 1 < len && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+        } else if i + 1 < len && chars[i] == '/' && chars[i + 1] == '*' {
             // block comment — skip until */
             i += 2;
-            while i + 1 < len && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+            while i + 1 < len && !(chars[i] == '*' && chars[i + 1] == '/') {
                 // preserve newlines so line numbers stay correct
-                if bytes[i] == b'\n' {
+                if chars[i] == '\n' {
                     out.push('\n');
                 }
                 i += 1;
@@ -42,26 +44,26 @@ pub(crate) fn strip_comments(input: &str) -> String {
             if i + 1 < len {
                 i += 2; // skip */
             }
-        } else if bytes[i] == b'"' {
+        } else if chars[i] == '"' {
             // inside a string literal — copy verbatim, handling escapes
             out.push('"');
             i += 1;
             while i < len {
-                if bytes[i] == b'\\' && i + 1 < len {
-                    out.push(bytes[i] as char);
-                    out.push(bytes[i + 1] as char);
+                if chars[i] == '\\' && i + 1 < len {
+                    out.push(chars[i]);
+                    out.push(chars[i + 1]);
                     i += 2;
-                } else if bytes[i] == b'"' {
+                } else if chars[i] == '"' {
                     out.push('"');
                     i += 1;
                     break;
                 } else {
-                    out.push(bytes[i] as char);
+                    out.push(chars[i]);
                     i += 1;
                 }
             }
         } else {
-            out.push(bytes[i] as char);
+            out.push(chars[i]);
             i += 1;
         }
     }

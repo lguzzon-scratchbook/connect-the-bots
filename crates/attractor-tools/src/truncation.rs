@@ -8,6 +8,30 @@ pub enum TruncationMode {
     Tail,
 }
 
+/// Find the largest byte index <= `target` that lies on a UTF-8 char boundary.
+fn floor_char_boundary(s: &str, target: usize) -> usize {
+    if target >= s.len() {
+        return s.len();
+    }
+    let mut i = target;
+    while i > 0 && !s.is_char_boundary(i) {
+        i -= 1;
+    }
+    i
+}
+
+/// Find the smallest byte index >= `target` that lies on a UTF-8 char boundary.
+fn ceil_char_boundary(s: &str, target: usize) -> usize {
+    if target >= s.len() {
+        return s.len();
+    }
+    let mut i = target;
+    while i < s.len() && !s.is_char_boundary(i) {
+        i += 1;
+    }
+    i
+}
+
 /// Truncate `output` to at most `max_chars` characters using the given mode.
 ///
 /// If the output is within the limit, it is returned unchanged.
@@ -19,20 +43,20 @@ pub fn truncate_output(output: &str, max_chars: usize, mode: TruncationMode) -> 
 
     match mode {
         TruncationMode::HeadTail => {
-            let head_size = max_chars * 40 / 100;
-            let tail_size = max_chars - head_size;
-            let removed = output.len() - head_size - tail_size;
+            let head_size = floor_char_boundary(output, max_chars * 40 / 100);
+            let tail_start = ceil_char_boundary(output, output.len() - (max_chars - head_size));
+            let removed = tail_start - head_size;
             let head = &output[..head_size];
-            let tail = &output[output.len() - tail_size..];
+            let tail = &output[tail_start..];
             format!(
                 "{}\n[WARNING: Output truncated. {} characters removed from middle]\n{}",
                 head, removed, tail
             )
         }
         TruncationMode::Tail => {
-            let kept = max_chars;
-            let removed = output.len() - kept;
-            let tail = &output[output.len() - kept..];
+            let tail_start = ceil_char_boundary(output, output.len() - max_chars);
+            let removed = tail_start;
+            let tail = &output[tail_start..];
             format!(
                 "\n[WARNING: Output truncated. {} characters removed from start]\n{}",
                 removed, tail

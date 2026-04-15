@@ -20,6 +20,10 @@ impl LoopDetector {
     /// Record a tool call and check if we're in a loop.
     /// Returns true if a loop is detected.
     pub fn record_and_check(&mut self, tool_name: &str, arguments: &serde_json::Value) -> bool {
+        if self.window_size == 0 {
+            return false;
+        }
+
         let signature = format!("{}:{}", tool_name, Self::hash_args(arguments));
         self.recent_calls.push_back(signature);
 

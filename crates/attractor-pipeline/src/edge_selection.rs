@@ -4,6 +4,8 @@
 //! based on a priority cascade: condition match, preferred label, suggested next
 //! IDs, highest weight, and lexical tiebreak.
 
+use std::sync::OnceLock;
+
 use crate::condition::{evaluate_condition, parse_condition};
 use crate::graph::{PipelineEdge, PipelineGraph};
 
@@ -72,25 +74,25 @@ pub fn select_edge<'a>(
 /// Normalize a label for comparison: lowercase, strip accelerator prefixes like
 /// `[Y]`, `Y)`, `Y-`.
 fn normalize_label(label: &str) -> String {
+    static RE: OnceLock<regex::Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| {
+        regex::Regex::new(r"^(?:\[\w\]\s*|\w\)\s*|\w-\s*)").expect("valid regex")
+    });
     let s = label.trim().to_lowercase();
-    // Strip accelerator prefixes: [Y] , Y) , Y-
-    // Only match if there's an actual accelerator pattern followed by content.
-    regex::Regex::new(r"^(?:\[\w\]\s*|\w\)\s*|\w-\s*)")
-        .unwrap()
-        .replace(&s, "")
-        .to_string()
+    re.replace(&s, "").to_string()
 }
 
 /// Pick the edge with the highest weight; break ties by lexicographically
 /// smallest `to` field.
 fn best_by_weight_then_lexical<'a>(edges: &[&'a PipelineEdge]) -> &'a PipelineEdge {
+    debug_assert!(!edges.is_empty(), "best_by_weight_then_lexical called with empty slice");
     edges
         .iter()
         .copied()
         .max_by(|a, b| {
             a.weight.cmp(&b.weight).then(b.to.cmp(&a.to)) // lexical ascending = reverse compare
         })
-        .unwrap()
+        .expect("edges slice must not be empty")
 }
 
 #[cfg(test)]

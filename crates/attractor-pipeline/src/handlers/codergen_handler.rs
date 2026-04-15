@@ -248,13 +248,14 @@ fn parse_cli_output(
     node_id: &str,
 ) -> Result<NormalizedCliResult> {
     if stdout.trim().is_empty() {
+        let stderr_preview: String = stderr.chars().take(500).collect();
         return Err(AttractorError::HandlerError {
             handler: "codergen".into(),
             node: node_id.into(),
             message: format!(
                 "{} produced no output. stderr: {}",
                 provider.display_name(),
-                &stderr[..stderr.len().min(500)]
+                stderr_preview
             ),
         });
     }
@@ -271,11 +272,10 @@ fn parse_claude_output(stdout: &str, node_id: &str) -> Result<NormalizedCliResul
         serde_json::from_str(stdout).map_err(|e| AttractorError::HandlerError {
             handler: "codergen".into(),
             node: node_id.into(),
-            message: format!(
-                "Failed to parse Claude output: {} — raw: {}",
-                e,
-                &stdout[..stdout.len().min(500)]
-            ),
+            message: {
+                let preview: String = stdout.chars().take(500).collect();
+                format!("Failed to parse Claude output: {} — raw: {}", e, preview)
+            },
         })?;
     Ok(NormalizedCliResult {
         text: parsed.result,
@@ -333,11 +333,10 @@ fn parse_gemini_output(stdout: &str, node_id: &str) -> Result<NormalizedCliResul
         serde_json::from_str(stdout).map_err(|e| AttractorError::HandlerError {
             handler: "codergen".into(),
             node: node_id.into(),
-            message: format!(
-                "Failed to parse Gemini output: {} — raw: {}",
-                e,
-                &stdout[..stdout.len().min(500)]
-            ),
+            message: {
+                let preview: String = stdout.chars().take(500).collect();
+                format!("Failed to parse Gemini output: {} — raw: {}", e, preview)
+            },
         })?;
 
     if let Some(err) = parsed.error {
@@ -562,7 +561,7 @@ impl NodeHandler for CodergenHandler {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);
 
-        if !output.status.success() && stdout.is_empty() {
+        if !output.status.success() {
             return Err(AttractorError::HandlerError {
                 handler: "codergen".into(),
                 node: node.id.clone(),

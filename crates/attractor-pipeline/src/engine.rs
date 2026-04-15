@@ -170,7 +170,7 @@ impl PipelineExecutor {
         loop {
             // Check safety limits
             step_count += 1;
-            if step_count > max_steps {
+            if step_count >= max_steps {
                 tracing::error!(steps = step_count, max = max_steps, "Step limit exceeded");
                 return Err(AttractorError::Other(format!(
                     "Pipeline exceeded maximum step count ({max_steps}). Use --max-steps to increase."

@@ -166,16 +166,15 @@ impl AgentSession {
 
     /// Push a steering message to be injected at the next tool round boundary.
     pub fn steer(&mut self, message: String) {
-        tracing::debug!(
-            "Steering message queued: {}",
-            &message[..message.len().min(80)]
-        );
+        let preview: String = message.chars().take(80).collect();
+        tracing::debug!("Steering message queued: {}", preview);
         self.steering_queue.push(message);
     }
 
     /// Push a follow-up input to be processed after the current input completes.
     pub fn follow_up(&mut self, message: String) {
-        tracing::debug!("Follow-up queued: {}", &message[..message.len().min(80)]);
+        let preview: String = message.chars().take(80).collect();
+        tracing::debug!("Follow-up queued: {}", preview);
         self.followup_queue.push_back(message);
     }
 
@@ -383,10 +382,15 @@ impl AgentSession {
                 Some(tool) => match tool.execute(tc.arguments.clone(), self.env.as_ref()).await {
                     Ok(output) => {
                         let truncated = if output.len() > MAX_TOOL_OUTPUT_LEN {
-                            let mut t = output[..MAX_TOOL_OUTPUT_LEN].to_string();
+                            // Find a char-boundary-safe split point
+                            let mut split = MAX_TOOL_OUTPUT_LEN;
+                            while split > 0 && !output.is_char_boundary(split) {
+                                split -= 1;
+                            }
+                            let mut t = output[..split].to_string();
                             t.push_str(&format!(
                                 "\n\n[WARNING: Output truncated. {} characters removed.]",
-                                output.len() - MAX_TOOL_OUTPUT_LEN
+                                output.len() - split
                             ));
                             t
                         } else {
