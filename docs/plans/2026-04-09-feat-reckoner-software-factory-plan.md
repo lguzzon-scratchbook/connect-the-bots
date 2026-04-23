@@ -12,6 +12,7 @@ deepened: 2026-04-09
 **Research agents used:** 10 (containers/OrbStack, SQLite patterns, observability, git automation, linter framework, container security x2, macOS scheduling, architecture review, performance review)
 
 ### Key Improvements from Research
+
 1. **Switch from sqlx to rusqlite** — sync API matches SQLite reality, faster CLI startup, no pool needed
 2. **Start with JSON log files, not Loki** — zero infra, hl CLI for queries, promote to Loki/VictoriaLogs later
 3. **Bare clone + git worktree per task** — solves concurrent same-repo, improves virtiofs perf, shared object store
@@ -24,6 +25,7 @@ deepened: 2026-04-09
 10. **outcome_json out of SQLite** — prevents DB bloat, keeps under 100MB target
 
 ### Critical Security Findings
+
 - Use repo-scoped fine-grained PATs, not SSH keys (limits blast radius)
 - Drop ALL container capabilities + no-new-privileges
 - Read-only root filesystem + tmpfs scratch
@@ -45,6 +47,7 @@ PAS is the pipeline execution engine. Reckoner is everything else.
 ## Problem Statement / Motivation
 
 PAS can run pipelines, but it has no opinion about:
+
 - Where code lives or how it gets there (git clone, branching, PRs)
 - Isolation between concurrent tasks (containers, resource limits)
 - Architectural enforcement on the code pipelines produce
@@ -191,6 +194,7 @@ CREATE INDEX idx_schedules_enabled ON schedules(enabled);
 ```
 
 **SQLite configuration (set once on connection open):**
+
 - journal_mode=WAL, synchronous=NORMAL, busy_timeout=5000
 - foreign_keys=ON, cache_size=-64000, mmap_size=256MB, temp_store=MEMORY
 - Migrations via rusqlite_migration (PRAGMA user_version, no migration tables)
@@ -262,6 +266,7 @@ Done. Container gone, worktree gone, logs preserved.
 **Merge conflicts:** Preemptive rebase before PR. If rebase fails, abandon-and-retry (re-checkout from current main, re-run pipeline).
 
 **Bare clone + worktree pattern:**
+
 - reck add does git clone --bare --filter=blob:none (treeless, fast)
 - Each task gets git worktree add from the bare clone
 - All worktrees share one object store (2GB repo stored once)
@@ -272,7 +277,7 @@ Done. Container gone, worktree gone, logs preserved.
 
 Reckoner distinguishes two kinds of code checking:
 
-1. **Toolchain** — language-specific code quality tools the *repo* needs (linters, type checkers, formatters). These are the tools you'd run in CI. Configurable per-repo.
+1. **Toolchain** — language-specific code quality tools the _repo_ needs (linters, type checkers, formatters). These are the tools you'd run in CI. Configurable per-repo.
 2. **Architectural linters** — Reckoner's own structural checks (file size, dependency direction, doc freshness). These enforce harness-level invariants.
 
 Both run in the LINT phase. Toolchain runs first (fix code quality), then architectural linters (fix structural issues).
@@ -280,6 +285,7 @@ Both run in the LINT phase. Toolchain runs first (fix code quality), then archit
 **Toolchain is pluggable.** Tools are configured per-repo in `.reckoner/toolchain.toml`, falling back to auto-detection, falling back to global defaults. The framework doesn't hardcode any specific tool — it invokes whatever command is configured and parses the exit code.
 
 **Per-repo config** (`.reckoner/toolchain.toml` in the repo root):
+
 ```toml
 [python]
 lint = "ruff check --fix ."
@@ -298,6 +304,7 @@ typecheck = "cargo check --workspace"
 ```
 
 **Global defaults** in `~/.reckoner/config.toml`:
+
 ```toml
 [toolchain.defaults.python]
 lint = "ruff check --fix ."
@@ -318,6 +325,7 @@ typecheck = "cargo check --workspace"
 **Auto-detection:** If no `.reckoner/toolchain.toml` exists, Reckoner detects languages from file extensions and applies global defaults. `reck add` reports which toolchain it will use and scaffolds a `.reckoner/toolchain.toml` for the user to customize.
 
 **Execution in the LINT phase:**
+
 1. Detect which languages are present in changed files
 2. Run `format` commands (auto-fix style issues before anything else)
 3. Run `lint` commands (catch code quality issues)
@@ -352,13 +360,13 @@ Separate from the per-repo toolchain, Reckoner runs its own structural linters t
 
 **Built-in architectural linters:**
 
-| Linter | What it checks |
-|--------|----------------|
-| file-size | No source file exceeds N lines (default 500) |
+| Linter               | What it checks                                                   |
+| -------------------- | ---------------------------------------------------------------- |
+| file-size            | No source file exceeds N lines (default 500)                     |
 | dependency-direction | Layer imports flow in one direction only (configurable per-repo) |
-| doc-freshness | Docs reference code that changed since last doc update |
-| agents-md-toc | AGENTS.md exists, under N lines, points to docs/ |
-| structured-logging | No raw println/console.log |
+| doc-freshness        | Docs reference code that changed since last doc update           |
+| agents-md-toc        | AGENTS.md exists, under N lines, points to docs/                 |
+| structured-logging   | No raw println/console.log                                       |
 
 ### Lint-Fix Loop
 
@@ -377,23 +385,28 @@ Both toolchain and architectural linters feed into the same fix loop (max 3 iter
 ### Observability (Tiered)
 
 **Tier 1 (start here): Structured JSON files + hl CLI**
+
 - Containers write JSONL to stdout, Reckoner captures to ~/.reckoner/logs/
 - Query with hl (Rust, 2 GiB/s): hl --filter 'task_id=reck-42' logs/
 - Zero infrastructure, zero idle cost
 
 **Tier 2 (web UI): SQLite log store + datasette**
+
 - ~10MB idle, SQL querying, web UI
 
 **Tier 3 (scale): VictoriaLogs + Grafana**
+
 - 87% less memory than Loki, auto-indexes all fields, ~120-200MB idle
 
 **Tier 4 (Loki ecosystem): Loki monolithic + Grafana**
+
 - Promtail is EOL (March 2026). Use direct HTTP push or Grafana Alloy.
 - 300-500MB idle. Only if you specifically want LogQL.
 
 ### Background Agents (macOS launchd)
 
 **launchd LaunchAgents** at ~/Library/LaunchAgents/com.reckoner.name.plist:
+
 - Sleep-aware: fires on wake if missed during sleep
 - Concurrent-run-safe: will not start second instance
 - ProcessType: Background + LowPriorityIO: true
@@ -401,6 +414,7 @@ Both toolchain and architectural linters feed into the same fix loop (max 3 iter
 **Plist generation:** plist crate + custom serde struct. Absolute paths required (no tilde expansion). Explicit PATH in EnvironmentVariables including /opt/homebrew/bin.
 
 **CLI:**
+
 ```
 reck schedule add --name entropy-gc --pipeline entropy-gc.dot --cron "0 3 * * *"
 reck schedule list
@@ -410,6 +424,7 @@ reck schedule run entropy-gc
 ```
 
 **Security for background agents:**
+
 - Read-only tools for scan/analysis phases
 - Human approval gate before push/PR
 - Lower budget caps than interactive tasks
@@ -420,6 +435,7 @@ reck schedule run entropy-gc
 ### Security Model
 
 **Container hardening:**
+
 - cap_drop: ALL + no-new-privileges
 - read_only: true root filesystem + tmpfs scratch
 - pids-limit: 512 (fork bomb protection)
@@ -429,23 +445,27 @@ reck schedule run entropy-gc
 - OrbStack VM boundary = two-layer isolation
 
 **Secrets:**
+
 - Docker Compose secrets (file-mounted to /run/secrets/)
 - Fine-grained PATs scoped per-repo (contents:write + pull_requests:write only)
 - SSH agent socket forwarding if needed (never copy keys)
 - Secrets die with container
 
 **Network:**
+
 - Squid forward proxy on host with domain allowlist
 - Allow: api.anthropic.com, api.openai.com, github.com, api.github.com, package registries
 - Block all other outbound traffic
 - --network none for pipeline steps that do not need network
 
 **Filesystem:**
+
 - Worktree bind-mount (rw) — working files only, not .git/
 - Log volume (rw) — named Docker volume
 - Everything else: do not mount
 
 **Base image:**
+
 - Pinned by SHA256 digest
 - Claude Code install script vendored and audited
 - All apt packages version-pinned
@@ -583,6 +603,7 @@ regex = "1"
 ## Implementation Phases
 
 ### Phase 1: Foundation (CLI + Repo + Config)
+
 - Rust workspace: reckoner-cli, reckoner-core
 - CLI skeleton: add, list, remove, sync, config, init
 - SQLite with rusqlite + rusqlite_migration
@@ -590,24 +611,28 @@ regex = "1"
 - Git: bare treeless clone, fetch, worktree add/remove
 
 ### Phase 2: Container Engine
+
 - bollard for container lifecycle
 - Base Dockerfile (pinned, hardened, non-root)
 - Docker secrets, egress proxy (Squid), network setup
 - reck doctor
 
 ### Phase 3: Task Runner
+
 - reck task full lifecycle
 - Task state machine with transitions and audit trail
 - PAS execution via docker exec + --output-result
 - Log collection to JSONL, reck status/logs
 
 ### Phase 4: Git + PR Integration
+
 - Worktree per task, branch naming, commit/push/PR
 - gh auth setup-git in entrypoint
 - Structured PR body template
 - Cleanup: worktree remove + branch delete
 
 ### Phase 5: Toolchain + Linter Framework
+
 - Pluggable toolchain: per-repo `.reckoner/toolchain.toml` with language auto-detection
 - Default presets: ruff+ty (Python), biome (TypeScript), clippy+fmt (Rust)
 - Architectural linters: JSON-Lines runner with plugin discovery
@@ -616,28 +641,30 @@ regex = "1"
 - Per-rule config in config.toml, per-repo overrides
 
 ### Phase 6: Observability
+
 - Tier 1: JSONL files + hl integration
 - Tier 2+: optional SQLite/VictoriaLogs/Loki via reck infra
 
 ### Phase 7: Background Agents
+
 - launchd plist generation, schedule CLI
 - Restricted tools, approval gates, lower budgets
 - Built-in pipelines: entropy-gc, doc-gardening, quality-scan
 
 ## Risk Analysis
 
-| Risk | Mitigation |
-|------|------------|
-| OrbStack API changes | ContainerRuntime trait; bollard uses stable Docker API |
-| Container resource exhaustion | Per-container limits, reck status shows usage |
-| PAS version mismatch | reck doctor checks version; config pins minimum |
-| Git auth inside containers | Scoped fine-grained PATs, Docker secrets |
-| Agent reads API keys | Docker secrets (file mount), egress proxy blocks exfil |
-| Agent exfiltrates code | Network egress allowlist via Squid proxy |
-| Concurrent same-repo tasks | Git worktrees with built-in branch locking |
-| SQLite/filesystem desync | reck doctor --integrity |
-| Background agent prompt injection | Restricted tools, approval gate before push |
-| Base image supply chain | Pin by SHA, vendor install scripts |
+| Risk                              | Mitigation                                             |
+| --------------------------------- | ------------------------------------------------------ |
+| OrbStack API changes              | ContainerRuntime trait; bollard uses stable Docker API |
+| Container resource exhaustion     | Per-container limits, reck status shows usage          |
+| PAS version mismatch              | reck doctor checks version; config pins minimum        |
+| Git auth inside containers        | Scoped fine-grained PATs, Docker secrets               |
+| Agent reads API keys              | Docker secrets (file mount), egress proxy blocks exfil |
+| Agent exfiltrates code            | Network egress allowlist via Squid proxy               |
+| Concurrent same-repo tasks        | Git worktrees with built-in branch locking             |
+| SQLite/filesystem desync          | reck doctor --integrity                                |
+| Background agent prompt injection | Restricted tools, approval gate before push            |
+| Base image supply chain           | Pin by SHA, vendor install scripts                     |
 
 ## Sources
 

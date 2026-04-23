@@ -34,7 +34,7 @@ A full codebase audit on 2026-04-14 explored all 82 source files across 8 crates
 
 When an edge has `loop_restart = true`, `completed_nodes` and `node_outcomes` are both cleared immediately. If this edge eventually leads to an `Msquare` exit node, `enforce_goal_gates` receives an empty `node_outcomes` map, so every goal gate from the cleared loop is invisible and passes silently.
 
-**Fix:** Clear `completed_nodes` and `node_outcomes` *after* the exit node check, or evaluate goal gates before clearing on a `loop_restart` edge.
+**Fix:** Clear `completed_nodes` and `node_outcomes` _after_ the exit node check, or evaluate goal gates before clearing on a `loop_restart` edge.
 
 **Risk:** Goal gates can be silently bypassed in pipelines that use `loop_restart` edges.
 

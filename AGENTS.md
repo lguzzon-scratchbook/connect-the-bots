@@ -122,9 +122,9 @@ Single version in workspace root `Cargo.toml` under `[workspace.package]`. All c
 
 ## Docs Reference
 
-| Doc | Contents |
-|-----|----------|
-| `docs/dot-dialect.md` | **Attractor DOT dialect** — grammar, value types, supported/unsupported features, pipeline semantics |
-| `docs/guide.md` | Pipeline patterns, planning workflow, handler dispatch |
-| `docs/cli-reference.md` | CLI commands, flags, environment setup |
-| `docs/task-verification.md` | Handler dispatch, goal gates, edge routing, budget guards |
+| Doc                         | Contents                                                                                             |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `docs/dot-dialect.md`       | **Attractor DOT dialect** — grammar, value types, supported/unsupported features, pipeline semantics |
+| `docs/guide.md`             | Pipeline patterns, planning workflow, handler dispatch                                               |
+| `docs/cli-reference.md`     | CLI commands, flags, environment setup                                                               |
+| `docs/task-verification.md` | Handler dispatch, goal gates, edge routing, budget guards                                            |

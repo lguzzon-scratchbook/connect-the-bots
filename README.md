@@ -100,6 +100,28 @@ Or install via cargo:
 cargo install --path crates/attractor-cli
 ```
 
+### Build Profiles
+
+Four build profiles provide speed/optimization tradeoffs:
+
+| Profile         | Use Case          | LTO  | Time  | Binary Size |
+| --------------- | ----------------- | ---- | ----- | ----------- |
+| `dev` (default) | Development       | Off  | ~3s   | Large       |
+| `quick-release` | Fast CI/iterating | Off  | ~8s   | Medium      |
+| `release`       | Daily use         | Thin | ~45s  | Small       |
+| `dist`          | Distribution      | Fat  | ~5min | Smallest    |
+
+Use with `cargo build --profile <name>` or `PAS_PROFILE=<name> ./install.sh`.
+
+For 90% optimization at CI speed: `./install.sh --fast` (uses `quick-release`).
+
+Enable additional speedups with `sccache`:
+
+```sh
+./scripts/setup-fast-builds.sh  # One-time setup
+export RUSTC_WRAPPER=sccache    # Add to shell profile
+```
+
 ## Usage
 
 ### Run a pipeline

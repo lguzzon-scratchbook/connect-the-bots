@@ -28,12 +28,12 @@ KEY      : NAME ( '.' NAME )*          -- dotted keys allowed (e.g. style.model)
 
 Must start with an ASCII letter or underscore, followed by ASCII alphanumerics or underscores.
 
-| Valid | Invalid | Why |
-|-------|---------|-----|
-| `my_node` | `"my node"` | Quoted IDs not supported |
-| `step_1` | `1step` | Cannot start with a digit |
-| `nodeA` | `42` | Numeric-only IDs not supported |
-| `cluster_main` | `node:port` | Port syntax not supported |
+| Valid          | Invalid     | Why                            |
+| -------------- | ----------- | ------------------------------ |
+| `my_node`      | `"my node"` | Quoted IDs not supported       |
+| `step_1`       | `1step`     | Cannot start with a digit      |
+| `nodeA`        | `42`        | Numeric-only IDs not supported |
+| `cluster_main` | `node:port` | Port syntax not supported      |
 
 Use `snake_case` for node IDs. Keep them short and descriptive.
 
@@ -41,13 +41,13 @@ Use `snake_case` for node IDs. Keep them short and descriptive.
 
 The parser recognizes five value types, tried in this order:
 
-| Type | Syntax | Examples |
-|------|--------|----------|
-| **String** | Double-quoted | `"hello"`, `"line1\nline2"` |
-| **Boolean** | Bare literal | `true`, `false` |
+| Type         | Syntax                      | Examples                           |
+| ------------ | --------------------------- | ---------------------------------- |
+| **String**   | Double-quoted               | `"hello"`, `"line1\nline2"`        |
+| **Boolean**  | Bare literal                | `true`, `false`                    |
 | **Duration** | Integer + suffix (unquoted) | `120s`, `250ms`, `15m`, `2h`, `7d` |
-| **Float** | Digits `.` digits | `1.5`, `-0.75` |
-| **Integer** | Optional sign + digits | `42`, `-3`, `+10` |
+| **Float**    | Digits `.` digits           | `1.5`, `-0.75`                     |
+| **Integer**  | Optional sign + digits      | `42`, `-3`, `+10`                  |
 
 ### Strings
 
@@ -60,13 +60,13 @@ The parser recognizes five value types, tried in this order:
 
 Not part of standard Graphviz. Unquoted integer followed by a time suffix:
 
-| Suffix | Meaning | Example |
-|--------|---------|---------|
-| `ms` | milliseconds | `250ms` |
-| `s` | seconds | `120s` |
-| `m` | minutes | `15m` |
-| `h` | hours | `2h` |
-| `d` | days | `7d` |
+| Suffix | Meaning      | Example |
+| ------ | ------------ | ------- |
+| `ms`   | milliseconds | `250ms` |
+| `s`    | seconds      | `120s`  |
+| `m`    | minutes      | `15m`   |
+| `h`    | hours        | `2h`    |
+| `d`    | days         | `7d`    |
 
 Quoted durations (e.g. `"120s"`, `"5m"`) parse as strings, not Duration values. The engine handles both forms, but prefer unquoted for clarity.
 
@@ -145,21 +145,21 @@ Nodes referenced in edges are implicitly created (with current node defaults) if
 
 These standard Graphviz DOT features will cause parse errors or be silently ignored:
 
-| Feature | Status |
-|---------|--------|
-| Undirected graphs (`graph G { }`) | **Parse error** |
-| Undirected edges (`a -- b`) | **Parse error** |
-| `strict` keyword | **Parse error** |
-| Quoted node IDs (`"my node"`) | **Parse error** |
-| Numeric node IDs (`42 -> 99`) | **Parse error** |
-| HTML labels (`<B>text</B>`) | **Parse error** |
-| Port syntax (`node:port:compass`) | **Parse error** |
-| String concatenation (`"a" + "b"`) | **Parse error** |
-| Subgraph as edge endpoint (`{a b} -> c`) | **Parse error** |
-| Chained attr blocks (`[a=1][b=2]`) | Second block ignored |
-| `#` preprocessor comments | Not recognized |
-| Floats without leading digit (`.5`) | **Parse error** (use `0.5`) |
-| Scientific notation (`1e-3`) | **Parse error** |
+| Feature                                  | Status                      |
+| ---------------------------------------- | --------------------------- |
+| Undirected graphs (`graph G { }`)        | **Parse error**             |
+| Undirected edges (`a -- b`)              | **Parse error**             |
+| `strict` keyword                         | **Parse error**             |
+| Quoted node IDs (`"my node"`)            | **Parse error**             |
+| Numeric node IDs (`42 -> 99`)            | **Parse error**             |
+| HTML labels (`<B>text</B>`)              | **Parse error**             |
+| Port syntax (`node:port:compass`)        | **Parse error**             |
+| String concatenation (`"a" + "b"`)       | **Parse error**             |
+| Subgraph as edge endpoint (`{a b} -> c`) | **Parse error**             |
+| Chained attr blocks (`[a=1][b=2]`)       | Second block ignored        |
+| `#` preprocessor comments                | Not recognized              |
+| Floats without leading digit (`.5`)      | **Parse error** (use `0.5`) |
+| Scientific notation (`1e-3`)             | **Parse error**             |
 
 ---
 
@@ -169,55 +169,55 @@ The grammar above defines what **parses**. This section defines what the attract
 
 ## Node Shapes and Handlers
 
-| Shape | Role | Handler | Required Attributes |
-|-------|------|---------|---------------------|
-| `Mdiamond` | **Start** -- entry point, exactly one | StartHandler | none |
-| `Msquare` | **Exit** -- pipeline completion, exactly one | ExitHandler | none |
-| `box` | **Task** -- runs Claude Code with the prompt | CodergenHandler | `prompt` |
-| `diamond` | **Conditional** -- Claude picks the outgoing edge | ConditionalHandler | `prompt`, `node_type="conditional"` |
-| `hexagon` | **Human gate** -- pauses for human approval | WaitHumanHandler | `node_type="wait.human"` |
-| `parallelogram` | **Tool** -- runs a shell command | ToolHandler | `tool_command` |
+| Shape           | Role                                              | Handler            | Required Attributes                 |
+| --------------- | ------------------------------------------------- | ------------------ | ----------------------------------- |
+| `Mdiamond`      | **Start** -- entry point, exactly one             | StartHandler       | none                                |
+| `Msquare`       | **Exit** -- pipeline completion, exactly one      | ExitHandler        | none                                |
+| `box`           | **Task** -- runs Claude Code with the prompt      | CodergenHandler    | `prompt`                            |
+| `diamond`       | **Conditional** -- Claude picks the outgoing edge | ConditionalHandler | `prompt`, `node_type="conditional"` |
+| `hexagon`       | **Human gate** -- pauses for human approval       | WaitHumanHandler   | `node_type="wait.human"`            |
+| `parallelogram` | **Tool** -- runs a shell command                  | ToolHandler        | `tool_command`                      |
 
 ## Node Attributes
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `label` | string | node ID | Display name in logs |
-| `prompt` | string | -- | Task sent to Claude Code. Required for `box` and `diamond`. |
-| `shape` | string | -- | Node shape (see table above) |
-| `node_type` | string | auto | Handler override: `"conditional"`, `"tool"`, `"parallel"`, `"fan_in"`, `"manager"`, `"wait.human"` |
-| `llm_model` | string | graph `model` | Model override: `"haiku"`, `"sonnet"`, `"opus"`, or full model ID |
-| `llm_provider` | string | `"claude"` | CLI provider: `"claude"`, `"codex"`, `"gemini"` |
-| `allowed_tools` | string | all | Comma-separated tool list, e.g. `"Read,Grep,Glob"` or `"Bash(git:*)"` |
-| `max_budget_usd` | string | unlimited | Spend cap for this node's session |
-| `goal_gate` | boolean | false | Must succeed for pipeline completion |
-| `retry_target` | string | -- | Node to loop back to on goal gate failure |
-| `fallback_retry_target` | string | -- | Second-level retry target |
-| `max_retries` | integer | 0 | Max retry attempts |
-| `timeout` | duration | -- | Max execution time: `120s`, `600s`, `15m`, `1h` |
-| `tool_command` | string | -- | Shell command for `parallelogram` nodes |
-| `fidelity` | string | -- | Context mode: `"full"`, `"truncate"`, `"compact"`, `"summary"` |
-| `classes` | string | -- | Space-separated class list for stylesheet matching |
-| `auto_status` | boolean | true | Auto-set status from outcome |
-| `allow_partial` | boolean | false | Allow partial success |
+| Attribute               | Type     | Default       | Description                                                                                        |
+| ----------------------- | -------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| `label`                 | string   | node ID       | Display name in logs                                                                               |
+| `prompt`                | string   | --            | Task sent to Claude Code. Required for `box` and `diamond`.                                        |
+| `shape`                 | string   | --            | Node shape (see table above)                                                                       |
+| `node_type`             | string   | auto          | Handler override: `"conditional"`, `"tool"`, `"parallel"`, `"fan_in"`, `"manager"`, `"wait.human"` |
+| `llm_model`             | string   | graph `model` | Model override: `"haiku"`, `"sonnet"`, `"opus"`, or full model ID                                  |
+| `llm_provider`          | string   | `"claude"`    | CLI provider: `"claude"`, `"codex"`, `"gemini"`                                                    |
+| `allowed_tools`         | string   | all           | Comma-separated tool list, e.g. `"Read,Grep,Glob"` or `"Bash(git:*)"`                              |
+| `max_budget_usd`        | string   | unlimited     | Spend cap for this node's session                                                                  |
+| `goal_gate`             | boolean  | false         | Must succeed for pipeline completion                                                               |
+| `retry_target`          | string   | --            | Node to loop back to on goal gate failure                                                          |
+| `fallback_retry_target` | string   | --            | Second-level retry target                                                                          |
+| `max_retries`           | integer  | 0             | Max retry attempts                                                                                 |
+| `timeout`               | duration | --            | Max execution time: `120s`, `600s`, `15m`, `1h`                                                    |
+| `tool_command`          | string   | --            | Shell command for `parallelogram` nodes                                                            |
+| `fidelity`              | string   | --            | Context mode: `"full"`, `"truncate"`, `"compact"`, `"summary"`                                     |
+| `classes`               | string   | --            | Space-separated class list for stylesheet matching                                                 |
+| `auto_status`           | boolean  | true          | Auto-set status from outcome                                                                       |
+| `allow_partial`         | boolean  | false         | Allow partial success                                                                              |
 
 ## Edge Attributes
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `label` | string | -- | Display label and preferred_label matching |
-| `condition` | string | -- | Condition expression, e.g. `"preferred_label=PASS"`, `"outcome=success"` |
-| `weight` | integer | 0 | Higher = preferred when multiple edges match |
-| `loop_restart` | boolean | false | Clear completed nodes/outcomes (for back-edges in loops) |
-| `fidelity` | string | -- | Override fidelity when traversing this edge |
+| Attribute      | Type    | Default | Description                                                              |
+| -------------- | ------- | ------- | ------------------------------------------------------------------------ |
+| `label`        | string  | --      | Display label and preferred_label matching                               |
+| `condition`    | string  | --      | Condition expression, e.g. `"preferred_label=PASS"`, `"outcome=success"` |
+| `weight`       | integer | 0       | Higher = preferred when multiple edges match                             |
+| `loop_restart` | boolean | false   | Clear completed nodes/outcomes (for back-edges in loops)                 |
+| `fidelity`     | string  | --      | Override fidelity when traversing this edge                              |
 
 ## Graph Attributes
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `label` | string | Pipeline display name |
-| `goal` | string | Pipeline goal description (used by goal gates) |
-| `model` | string | Default LLM model for all nodes |
+| Attribute | Type   | Description                                    |
+| --------- | ------ | ---------------------------------------------- |
+| `label`   | string | Pipeline display name                          |
+| `goal`    | string | Pipeline goal description (used by goal gates) |
+| `model`   | string | Default LLM model for all nodes                |
 
 ## Common Pipeline Patterns
 

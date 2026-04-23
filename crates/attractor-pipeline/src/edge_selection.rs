@@ -227,9 +227,32 @@ mod tests {
     // Test 8: label normalization strips accelerators
     #[test]
     fn label_normalization_strips_accelerators() {
+        // Bracket format [X]
         assert_eq!(normalize_label("[Y] Yes, approve"), "yes, approve");
+        assert_eq!(normalize_label("[y] lowercase"), "lowercase");
+        assert_eq!(normalize_label("[1] number"), "number");
+        // Note: regex uses \w (single char), multi-digit needs different pattern
+        assert_eq!(normalize_label("[12] multi"), "[12] multi");
+
+        // Paren format X)
         assert_eq!(normalize_label("Y) Yes, approve"), "yes, approve");
+        assert_eq!(normalize_label("n) lowercase"), "lowercase");
+        assert_eq!(normalize_label("1) number"), "number");
+
+        // Dash format X-
         assert_eq!(normalize_label("Y- Yes, approve"), "yes, approve");
+        assert_eq!(normalize_label("n- lowercase"), "lowercase");
+        assert_eq!(normalize_label("1- number"), "number");
+
+        // Whitespace trimming
         assert_eq!(normalize_label("  Approve  "), "approve");
+        assert_eq!(normalize_label("  [Y]  padded  "), "padded");
+
+        // Edge cases
+        assert_eq!(normalize_label("[Y]"), "");
+        assert_eq!(normalize_label("Y)"), "");
+        assert_eq!(normalize_label("Y-"), "");
+        assert_eq!(normalize_label(""), "");
+        assert_eq!(normalize_label("no prefix"), "no prefix");
     }
 }
