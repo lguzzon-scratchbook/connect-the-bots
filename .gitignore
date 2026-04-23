@@ -9,3 +9,4 @@
 .npm-cache
 .gitignore
 .agents-reverse-engineer
+.tldr/cache/

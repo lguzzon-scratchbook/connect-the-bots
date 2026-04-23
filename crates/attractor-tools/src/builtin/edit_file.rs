@@ -77,6 +77,13 @@ impl Tool for EditFileTool {
         let path = Path::new(file_path);
         let content = env.read_file(path).await?;
 
+        if old_string.is_empty() {
+            return Err(attractor_types::AttractorError::ToolError {
+                tool: "edit_file".into(),
+                message: "old_string must not be empty".into(),
+            });
+        }
+
         let match_count = content.matches(old_string).count();
 
         if match_count == 0 {

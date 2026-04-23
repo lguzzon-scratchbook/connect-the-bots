@@ -113,9 +113,18 @@ Install via `./install.sh` or `cargo install --path crates/attractor-cli`.
 **Versioning**
 Single version in workspace root `Cargo.toml` under `[workspace.package]`. All crates inherit via `version.workspace = true`. **Never set versions directly in individual crates.** Bump only in root, then run `cargo check`.
 
-**Key Constraints**
+## Key Gotchas
 
-- Default `codergen` handler shells out to local `claude` CLI. Requires Claude Code installed. No API key needed.
-- Direct LLM handlers (OpenAI/Anthropic/Gemini) require `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` env vars.
-- Pipeline files use DOT (Graphviz digraph) syntax per `docs/guide.md`.
-- Integration tests located in `crates/attractor-pipeline/tests/integration.rs`.
+- The default `codergen` handler shells out to the local `claude` CLI — it requires Claude Code installed, no API key needed
+- Direct LLM handlers (OpenAI/Anthropic/Gemini) need their respective `*_API_KEY` env vars
+- Pipeline files use a strict DOT subset — see `docs/dot-dialect.md` for the grammar, supported features, and what breaks the parser. Read this before generating or editing `.dot` files.
+- Integration tests are in `crates/attractor-pipeline/tests/integration.rs`
+
+## Docs Reference
+
+| Doc | Contents |
+|-----|----------|
+| `docs/dot-dialect.md` | **Attractor DOT dialect** — grammar, value types, supported/unsupported features, pipeline semantics |
+| `docs/guide.md` | Pipeline patterns, planning workflow, handler dispatch |
+| `docs/cli-reference.md` | CLI commands, flags, environment setup |
+| `docs/task-verification.md` | Handler dispatch, goal gates, edge routing, budget guards |

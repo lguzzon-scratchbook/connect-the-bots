@@ -84,13 +84,17 @@ fn normalize_label(label: &str) -> String {
 /// Pick the edge with the highest weight; break ties by lexicographically
 /// smallest `to` field.
 fn best_by_weight_then_lexical<'a>(edges: &[&'a PipelineEdge]) -> &'a PipelineEdge {
+    debug_assert!(
+        !edges.is_empty(),
+        "best_by_weight_then_lexical called with empty slice"
+    );
     edges
         .iter()
         .copied()
         .max_by(|a, b| {
             a.weight.cmp(&b.weight).then(b.to.cmp(&a.to)) // lexical ascending = reverse compare
         })
-        .unwrap()
+        .expect("edges slice must not be empty")
 }
 
 #[cfg(test)]

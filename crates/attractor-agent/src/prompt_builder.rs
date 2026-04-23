@@ -91,7 +91,11 @@ impl SystemPromptBuilder {
     ) -> Self {
         if !context.is_empty() {
             let mut content = String::new();
-            for (key, value) in context {
+            // Sort keys for deterministic prompt output (important for caching)
+            let mut keys: Vec<_> = context.keys().collect();
+            keys.sort();
+            for key in keys {
+                let value = &context[key];
                 content.push_str(&format!("- {}: {}\n", key, value));
             }
             self.sections.push(PromptSection {
@@ -147,9 +151,13 @@ pub async fn discover_project_docs(project_root: &Path) -> Vec<ProjectDoc> {
     for name in &candidates {
         let path = project_root.join(name);
         if let Ok(content) = tokio::fs::read_to_string(&path).await {
-            // Truncate long docs
+            // Truncate long docs (char-boundary-safe)
             let truncated = if content.len() > 10_000 {
-                format!("{}...\n\n(truncated)", &content[..10_000])
+                let mut split = 10_000;
+                while split > 0 && !content.is_char_boundary(split) {
+                    split -= 1;
+                }
+                format!("{}...\n\n(truncated)", &content[..split])
             } else {
                 content
             };

@@ -267,6 +267,8 @@ async fn try_ripgrep(
     if let Some(max) = options.max_results {
         args.push(format!("-m{}", max));
     }
+    // Use `--` to prevent patterns starting with `-` from being parsed as flags
+    args.push("--".to_string());
     args.push(pattern.to_string());
     args.push(path.to_string_lossy().to_string());
 
